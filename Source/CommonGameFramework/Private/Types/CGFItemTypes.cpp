@@ -113,24 +113,24 @@ bool FItemInstance::NetSerialize(FArchive& Ar, UPackageMap* Map, bool& bOutSucce
 
 void FInventorySlot::PreReplicatedRemove(const FInventorySlotArray& ArraySerializer)
 {
-	if (ArraySerializer.OwningComponent)
+	if (ArraySerializer.OnSlotRemovedCallback)
 	{
-		// Owning component will handle OnItemRemoved delegate dispatch
+		ArraySerializer.OnSlotRemovedCallback(*this);
 	}
 }
 
 void FInventorySlot::PostReplicatedAdd(const FInventorySlotArray& ArraySerializer)
 {
-	if (ArraySerializer.OwningComponent)
+	if (ArraySerializer.OnSlotAddedCallback)
 	{
-		// Owning component will handle OnItemAdded delegate dispatch
+		ArraySerializer.OnSlotAddedCallback(*this);
 	}
 }
 
 void FInventorySlot::PostReplicatedChange(const FInventorySlotArray& ArraySerializer)
 {
-	if (ArraySerializer.OwningComponent)
+	if (ArraySerializer.OnSlotChangedCallback)
 	{
-		// Owning component will handle OnItemUpdated delegate dispatch
+		ArraySerializer.OnSlotChangedCallback(*this);
 	}
 }

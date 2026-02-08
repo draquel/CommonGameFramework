@@ -151,6 +151,12 @@ struct COMMONGAMEFRAMEWORK_API FInventorySlotArray : public FFastArraySerializer
 	// Set by the owning component during initialization.
 	UActorComponent* OwningComponent = nullptr;
 
+	// Replication callbacks — set by owning component to fire delegates on clients.
+	// These avoid a compile-time dependency from CommonGameFramework → ItemInventoryPlugin.
+	TFunction<void(const FInventorySlot&)> OnSlotAddedCallback;
+	TFunction<void(const FInventorySlot&)> OnSlotRemovedCallback;
+	TFunction<void(const FInventorySlot&)> OnSlotChangedCallback;
+
 	bool NetDeltaSerialize(FNetDeltaSerializeInfo& DeltaParms)
 	{
 		return FFastArraySerializer::FastArrayDeltaSerialize<FInventorySlot, FInventorySlotArray>(Items, DeltaParms, *this);
