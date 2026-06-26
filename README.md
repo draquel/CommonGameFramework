@@ -14,19 +14,20 @@ CommonGameFramework defines the **contracts** that the rest of the system builds
 - `FLootContext` — Parameters for loot generation (level, tags, luck)
 - `UItemInstanceFragment` — Base class for per-instance mutable data (durability, enchantments, etc.)
 
-**Interfaces:**
-- `IInteractable` — Implemented by anything a player can interact with
-- `IInventoryOwner` — Implemented by actors that have inventories
-- `IEquippable` — Queried on items to determine equipment behavior
-- `IItemStorage` — Persistence abstraction (local files, remote database)
-- `IInteractionSource` — Implemented by actors that perform interactions
+**Interfaces:** (interface types carry the `CGF` prefix, e.g. `ICGFInteractableInterface` /
+`UCGFInteractableInterface`)
+- `ICGFInteractableInterface` — Implemented by anything a player can interact with
+- `ICGFInventoryInterface` — Implemented by actors that have inventories
+- `ICGFEquippableInterface` — Queried on items to determine equipment behavior
+- `ICGFItemStorageInterface` — Persistence abstraction (local files, remote database)
+- `ICGFInteractionSourceInterface` — Implemented by actors that perform interactions
 
 **Gameplay tags:**
 Native tag declarations for `Item.*`, `Inventory.*`, `Equipment.*`, `Interaction.*` hierarchies used across all plugins.
 
 ## Requirements
 
-- Unreal Engine 5.7
+- Unreal Engine 5.8
 - GameplayAbilities plugin (enabled in .uproject)
 - No other Game Framework plugins required — this is the dependency root
 

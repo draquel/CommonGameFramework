@@ -33,7 +33,7 @@ The system is organized into four layers. Higher layers depend on lower layers b
 │  Shared types, interfaces, tags, utilities                   │
 ├──────────────────────────────────────────────────────────────┤
 │  ENGINE LAYER                                                │
-│  Unreal Engine 5.7: GAS, NetCore, AssetManager, etc.         │
+│  Unreal Engine 5.8: GAS, NetCore, AssetManager, etc.         │
 └──────────────────────────────────────────────────────────────┘
 ```
 
