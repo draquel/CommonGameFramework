@@ -37,14 +37,16 @@ CommonGameFramework/
 │       │   │   └── CGFGameplayTags.h                 ← Native gameplay tag declarations
 │       │   ├── Utilities/
 │       │   │   ├── CGFStatics.h                      ← Static helper functions, math, validation
-│       │   │   └── CGFCombatStatics.h                ← FindDamageable, faction hostility rule
+│       │   │   ├── CGFCombatStatics.h                ← FindDamageable, faction hostility rule
+│       │   │   └── CGFGameplayEffectStatics.h        ← Apply FCGFAttributeModifier lists (instant / SetByCaller.Stat.* class)
 │       │   └── CommonGameFramework.h                 ← Module API macro
 │       └── Private/
 │           ├── Tags/
 │           │   └── CGFGameplayTags.cpp
 │           ├── Utilities/
 │           │   ├── CGFStatics.cpp
-│           │   └── CGFCombatStatics.cpp
+│           │   ├── CGFCombatStatics.cpp
+│           │   └── CGFGameplayEffectStatics.cpp
 │           └── CommonGameFramework.cpp
 └── CommonGameFramework.uplugin
 ```
@@ -150,8 +152,11 @@ Damage.Type.Physical / Fire / Poison / Pure
 State.Dead / State.Downed / State.Invulnerable
 Event.Combat.Damaged / Event.Combat.Downed / Event.Combat.Died
 Ability.Attack.Melee
-SetByCaller.Damage
+Damage.Critical
+SetByCaller.Damage / SetByCaller.Stat (root of SetByCaller.Stat.<AttributeName>)
 ```
+
+**Data-driven stats:** `FCGFAttributeModifier` {Attribute, Magnitude} lives here so item fragments (ItemInventoryPlugin) and the appliers (EquipmentPlugin, VoxelCharacterPlugin) share one type. `UCGFGameplayEffectStatics` applies lists: instant via a transient effect, lasting via a game-supplied class with `SetByCaller.Stat.<Name>` modifiers (transient infinite effects do not replicate to the owning client — never do that).
 
 These are the starting set. Plugins extend with their own tags but these roots must be defined here so cross-plugin code can reference them.
 

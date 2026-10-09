@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
+#include "AttributeSet.h"
 #include "CGFCombatTypes.generated.h"
 
 // ---------------------------------------------------------------------------
@@ -89,4 +90,29 @@ struct COMMONGAMEFRAMEWORK_API FCGFDamageContext
 
 	/** True when BaseDamage is positive and finite. */
 	bool HasDamage() const { return FMath::IsFinite(BaseDamage) && BaseDamage > 0.f; }
+};
+
+// ---------------------------------------------------------------------------
+// FCGFAttributeModifier — one additive change to one attribute
+// ---------------------------------------------------------------------------
+
+/**
+ * Data-driven stat change: "+3 Defense", "+25 Health". Authored on item fragments
+ * (equipment stats, consumable effects) and applied through
+ * UCGFGameplayEffectStatics without any gameplay-effect asset.
+ */
+USTRUCT(BlueprintType)
+struct COMMONGAMEFRAMEWORK_API FCGFAttributeModifier
+{
+	GENERATED_BODY()
+
+	/** Attribute to change (picked from any registered attribute set). */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+	FGameplayAttribute Attribute;
+
+	/** Added to the attribute (negative values subtract). */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+	float Magnitude = 0.f;
+
+	bool IsValid() const { return Attribute.IsValid() && FMath::IsFinite(Magnitude); }
 };
