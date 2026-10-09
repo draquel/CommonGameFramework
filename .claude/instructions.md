@@ -24,23 +24,27 @@ CommonGameFramework/
 │       │   │   ├── CGFInventoryInterface.h           ← IInventoryOwner: any actor that owns inventories
 │       │   │   ├── CGFEquippableInterface.h          ← IEquippable: items that can be equipped
 │       │   │   ├── CGFItemStorageInterface.h         ← IItemStorage: persistence abstraction
-│       │   │   └── CGFInteractionSourceInterface.h   ← IInteractionSource: actors that perform interactions
+│       │   │   ├── CGFInteractionSourceInterface.h   ← IInteractionSource: actors that perform interactions
+│       │   │   └── CGFDamageableInterface.h          ← IDamageable: anything with a faction that can take damage
 │       │   ├── Types/
 │       │   │   ├── CGFItemTypes.h                    ← FItemInstance, FItemInstanceHandle, FInventorySlot
 │       │   │   ├── CGFInteractionTypes.h             ← FInteractionOption, FInteractionContext, EInteractionResult
 │       │   │   ├── CGFEquipmentTypes.h               ← FEquipmentSlotDefinition, EEquipmentResult
 │       │   │   ├── CGFLootTypes.h                    ← FLootContext, FLootResult
+│       │   │   ├── CGFCombatTypes.h                  ← FCGFDamageContext, ECGFDamageResult
 │       │   │   └── CGFCommonEnums.h                  ← EItemRarity, EInventoryOperation, shared enums
 │       │   ├── Tags/
 │       │   │   └── CGFGameplayTags.h                 ← Native gameplay tag declarations
 │       │   ├── Utilities/
-│       │   │   └── CGFStatics.h                      ← Static helper functions, math, validation
+│       │   │   ├── CGFStatics.h                      ← Static helper functions, math, validation
+│       │   │   └── CGFCombatStatics.h                ← FindDamageable, faction hostility rule
 │       │   └── CommonGameFramework.h                 ← Module API macro
 │       └── Private/
 │           ├── Tags/
 │           │   └── CGFGameplayTags.cpp
 │           ├── Utilities/
-│           │   └── CGFStatics.cpp
+│           │   ├── CGFStatics.cpp
+│           │   └── CGFCombatStatics.cpp
 │           └── CommonGameFramework.cpp
 └── CommonGameFramework.uplugin
 ```
@@ -141,6 +145,12 @@ Interaction.Type.Use
 Interaction.Type.Open
 Interaction.Type.Equip
 Interaction.Type.Inspect
+Faction.Player / Faction.Monster / Faction.Neutral
+Damage.Type.Physical / Fire / Poison / Pure
+State.Dead / State.Downed / State.Invulnerable
+Event.Combat.Damaged / Event.Combat.Downed / Event.Combat.Died
+Ability.Attack.Melee
+SetByCaller.Damage
 ```
 
 These are the starting set. Plugins extend with their own tags but these roots must be defined here so cross-plugin code can reference them.
@@ -170,6 +180,13 @@ These are the starting set. Plugins extend with their own tags but these roots m
 
 **IInteractionSource** — Implemented by actors that perform interactions (players, AI).
 - `GetInteractionComponent() → UInteractionComponent*`
+
+**IDamageable** (`ICGFDamageableInterface`) — Implemented by a combat component on anything that can take damage. Found via `UCGFCombatStatics::FindDamageable(Actor)` (actor first, then components). Damage application is NOT in the contract — it belongs to the plugin owning the attribute model (VoxelCharacterPlugin today).
+- `GetFactionTag() → FGameplayTag` (empty = not a combatant)
+- `IsDead() → bool`
+- `IsImmuneToDamage(FCGFDamageContext) → bool` (per-hit veto, default false)
+
+Hostility rule lives in `UCGFCombatStatics::AreHostileFactions` and nowhere else, so a relationship table can replace it later.
 
 ## Build.cs Dependencies
 

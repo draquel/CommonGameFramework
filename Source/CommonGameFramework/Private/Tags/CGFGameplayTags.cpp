@@ -41,4 +41,31 @@ namespace CGFGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Interaction_Type_Open,    "Interaction.Type.Open",    "Open a container, door, etc.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Interaction_Type_Equip,   "Interaction.Type.Equip",   "Equip an item directly from world");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Interaction_Type_Inspect, "Interaction.Type.Inspect", "Examine/read without taking");
+
+	// Faction
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Faction_Player,  "Faction.Player",  "Player characters");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Faction_Monster, "Faction.Monster", "Hostile creatures and dungeon enemies");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Faction_Neutral, "Faction.Neutral", "Never hostile to anyone (training dummies, townsfolk)");
+
+	// Damage.Type
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Damage_Type_Physical, "Damage.Type.Physical", "Melee/ranged physical damage; mitigated by defense");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Damage_Type_Fire,     "Damage.Type.Fire",     "Fire damage");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Damage_Type_Poison,   "Damage.Type.Poison",   "Poison damage");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Damage_Type_Pure,     "Damage.Type.Pure",     "Unmitigated damage (ignores defense)");
+
+	// State
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Dead,         "State.Dead",         "Combatant has died; rejects damage and ability activation");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Downed,       "State.Downed",       "Knocked out but recoverable; rejects ability activation");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Invulnerable, "State.Invulnerable", "Takes no damage while held");
+
+	// Event.Combat
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Event_Combat_Damaged, "Event.Combat.Damaged", "Sent to the target ASC after damage is applied");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Event_Combat_Downed,  "Event.Combat.Downed",  "Sent to the target ASC when it is knocked out");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Event_Combat_Died,    "Event.Combat.Died",    "Sent to the target ASC when it dies");
+
+	// Ability
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Attack_Melee, "Ability.Attack.Melee", "Melee attack ability identity");
+
+	// SetByCaller
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(SetByCaller_Damage, "SetByCaller.Damage", "Base damage magnitude on a damage effect spec");
 }
