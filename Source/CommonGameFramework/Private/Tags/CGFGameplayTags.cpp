@@ -17,6 +17,9 @@ namespace CGFGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Item_Rarity_Epic,      "Item.Rarity.Epic",      "Epic rarity");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Item_Rarity_Legendary, "Item.Rarity.Legendary", "Legendary rarity");
 
+	// Item.Key
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Item_Key_DungeonBoss, "Item.Key.DungeonBoss", "Opens a dungeon boss-room door");
+
 	// Inventory.Type
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Inventory_Type_Player,    "Inventory.Type.Player",    "Player's personal inventory");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Inventory_Type_Container, "Inventory.Type.Container", "World containers (chests, barrels)");
@@ -41,6 +44,12 @@ namespace CGFGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Interaction_Type_Open,    "Interaction.Type.Open",    "Open a container, door, etc.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Interaction_Type_Equip,   "Interaction.Type.Equip",   "Equip an item directly from world");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Interaction_Type_Inspect, "Interaction.Type.Inspect", "Examine/read without taking");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Interaction_Type_Search,  "Interaction.Type.Search",  "Search a container for loot");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Interaction_Type_Unlock,  "Interaction.Type.Unlock",  "Unlock a lock with a key");
+
+	// Loot.Source
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Loot_Source_DungeonTreasure,  "Loot.Source.DungeonTreasure",  "Roll context: a dungeon treasure-room chest");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Loot_Source_DungeonContainer, "Loot.Source.DungeonContainer", "Roll context: a searchable dungeon crate / barrel");
 
 	// Faction
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Faction_Player,  "Faction.Player",  "Player characters");

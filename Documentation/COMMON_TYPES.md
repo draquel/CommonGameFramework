@@ -444,6 +444,8 @@ Item.Rarity.Uncommon
 Item.Rarity.Rare
 Item.Rarity.Epic
 Item.Rarity.Legendary
+
+Item.Key.DungeonBoss          — Key identity: opens a dungeon boss-room door (keys are items with a Key fragment)
 ```
 
 ### Inventory Tags
@@ -475,6 +477,14 @@ Interaction.Type.Use          — Use/activate (context-dependent)
 Interaction.Type.Open         — Open a container, door, etc.
 Interaction.Type.Equip        — Equip an item directly from world
 Interaction.Type.Inspect      — Examine/read without taking
+Interaction.Type.Search       — Search a container for loot
+Interaction.Type.Unlock       — Unlock a lock with a key
+```
+
+### Loot Tags
+```
+Loot.Source.DungeonTreasure   — Roll context: a dungeon treasure-room chest
+Loot.Source.DungeonContainer  — Roll context: a searchable dungeon crate / barrel
 ```
 
 ### Combat Tags

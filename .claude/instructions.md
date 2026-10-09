@@ -146,7 +146,9 @@ Interaction.Type.Drop
 Interaction.Type.Use
 Interaction.Type.Open
 Interaction.Type.Equip
-Interaction.Type.Inspect
+Interaction.Type.Inspect / Interaction.Type.Search / Interaction.Type.Unlock
+Item.Key.DungeonBoss (key identity; keys are items with a Key fragment)
+Loot.Source.DungeonTreasure / Loot.Source.DungeonContainer (roll context)
 Faction.Player / Faction.Monster / Faction.Neutral
 Damage.Type.Physical / Fire / Poison / Pure
 State.Dead / State.Downed / State.Invulnerable
