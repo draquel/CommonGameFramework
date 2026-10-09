@@ -52,6 +52,7 @@ namespace CGFGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Damage_Type_Fire,     "Damage.Type.Fire",     "Fire damage");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Damage_Type_Poison,   "Damage.Type.Poison",   "Poison damage");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Damage_Type_Pure,     "Damage.Type.Pure",     "Unmitigated damage (ignores defense)");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Damage_Critical,      "Damage.Critical",      "Context tag on a hit that rolled a critical");
 
 	// State
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Dead,         "State.Dead",         "Combatant has died; rejects damage and ability activation");
@@ -68,4 +69,5 @@ namespace CGFGameplayTags
 
 	// SetByCaller
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(SetByCaller_Damage, "SetByCaller.Damage", "Base damage magnitude on a damage effect spec");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(SetByCaller_Stat,   "SetByCaller.Stat",   "Root of SetByCaller.Stat.<AttributeName> keys on stat-modifier effects");
 }

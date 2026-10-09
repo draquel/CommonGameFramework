@@ -54,6 +54,7 @@ namespace CGFGameplayTags
 	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Damage_Type_Fire);
 	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Damage_Type_Poison);
 	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Damage_Type_Pure);
+	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Damage_Critical);
 
 	// State — combatant state tags held on the ability system component
 	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Dead);
@@ -70,4 +71,6 @@ namespace CGFGameplayTags
 
 	// SetByCaller — magnitude keys on gameplay effect specs
 	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(SetByCaller_Damage);
+	/** Root of the per-attribute keys SetByCaller.Stat.<AttributeName> used by stat-modifier effects. */
+	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(SetByCaller_Stat);
 }

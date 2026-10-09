@@ -231,6 +231,21 @@ struct COMMONGAMEFRAMEWORK_API FCGFDamageContext
 };
 ```
 
+### FCGFAttributeModifier
+
+Declared in `CGFCombatTypes.h`. One additive attribute change ("+3 Defense"), authored on item fragments (equipment stats, consumable effects) and applied by `UCGFGameplayEffectStatics` without any gameplay-effect asset.
+
+```cpp
+USTRUCT(BlueprintType)
+struct COMMONGAMEFRAMEWORK_API FCGFAttributeModifier
+{
+    GENERATED_BODY()
+    FGameplayAttribute Attribute;   // Picked from any registered attribute set
+    float Magnitude = 0.f;          // Added (negative subtracts)
+    bool IsValid() const;
+};
+```
+
 ---
 
 ## Enums
@@ -472,6 +487,7 @@ Damage.Type.Physical          — Mitigated by defense
 Damage.Type.Fire
 Damage.Type.Poison
 Damage.Type.Pure              — Unmitigated
+Damage.Critical               — Context tag on a hit that rolled a critical
 
 State.Dead                    — Rejects damage and ability activation
 State.Downed                  — Knocked out but recoverable
@@ -483,6 +499,7 @@ Event.Combat.Died
 
 Ability.Attack.Melee          — Ability identity for TryActivateAbilitiesByTag
 SetByCaller.Damage            — Magnitude key on damage effect specs
+SetByCaller.Stat              — Root of SetByCaller.Stat.<AttributeName> keys on stat-modifier effects
 ```
 
 ### Extending Tags
@@ -551,6 +568,31 @@ public:
 ```
 
 Blueprint implementers leave the native interface pointer inside `TScriptInterface` null, so C++ callers go through `ICGFDamageableInterface::Execute_*` on `GetObject()`.
+
+## Gameplay Effect Helpers (CGFGameplayEffectStatics)
+
+Applies `FCGFAttributeModifier` lists without effect assets. Server-only; callers check authority.
+
+```cpp
+UCLASS()
+class COMMONGAMEFRAMEWORK_API UCGFGameplayEffectStatics : public UBlueprintFunctionLibrary
+{
+    GENERATED_BODY()
+public:
+    // Build a modifier from an attribute set class + property name (scripts, data tools)
+    static FCGFAttributeModifier MakeAttributeModifier(TSubclassOf<UAttributeSet> AttributeSet, FName AttributeName, float Magnitude, bool& bOutValid);
+    static FGameplayTag MakeStatSetByCallerTag(const FGameplayAttribute& Attribute);   // SetByCaller.Stat.<Name>
+
+    // Instant: transient instant effect (never replicated as an active effect, so safe)
+    static bool ApplyInstantAttributeModifiers(UAbilitySystemComponent* ASC, const TArray<FCGFAttributeModifier>& Modifiers, UObject* SourceObject);
+
+    // Lasting: a source-defined class whose modifiers are SetByCaller keyed SetByCaller.Stat.<Name>;
+    // unrequested stats are set to 0. (A transient infinite effect would not replicate to the owning client.)
+    static FActiveGameplayEffectHandle ApplyStatModifierEffect(UAbilitySystemComponent* ASC, TSubclassOf<UGameplayEffect> EffectClass,
+        const TArray<FCGFAttributeModifier>& Modifiers, UObject* SourceObject);
+    static TArray<FGameplayAttribute> GetStatEffectAttributes(TSubclassOf<UGameplayEffect> EffectClass);
+};
+```
 
 ---
 
