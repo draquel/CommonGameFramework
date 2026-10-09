@@ -208,6 +208,29 @@ struct COMMONGAMEFRAMEWORK_API FLootContext
 };
 ```
 
+### FCGFDamageContext
+
+Declared in `CGFCombatTypes.h`. Built by whatever causes a hit (ability, trap, projectile, debug command) and handed to the target's damageable. Carries no logic — the receiving plugin maps it onto its own attribute/mitigation model.
+
+```cpp
+USTRUCT(BlueprintType)
+struct COMMONGAMEFRAMEWORK_API FCGFDamageContext
+{
+    GENERATED_BODY()
+
+    TWeakObjectPtr<AActor> InstigatorActor;  // Responsible actor (pawn); null for hazards
+    TWeakObjectPtr<AActor> CauserActor;      // Weapon / trap / projectile; may equal instigator
+    FGameplayTag DamageType;                 // Damage.Type.*; empty = Physical
+    float BaseDamage = 0.f;                  // Before receiver-side modifiers
+    FVector HitLocation, HitNormal;          // Impact, if known
+    FGuid SourceItemInstanceId;              // The FItemInstance behind the hit, if any
+    bool bIgnoreFaction = false;             // Hazards: skip the hostility check
+    FGameplayTagContainer ContextTags;       // Free-form (Damage.Source.Trap, Damage.Critical, ...)
+
+    bool HasDamage() const;                  // BaseDamage > 0 and finite
+};
+```
+
 ---
 
 ## Enums
@@ -234,6 +257,13 @@ Success, Failed, NotAllowed, OutOfRange, Cancelled, InProgress
 Success, Failed, InvalidItem, IncompatibleSlot, SlotOccupied,
 NoInventorySpace (for unequip-to-inventory), NotAuthorized
 ```
+
+### ECGFDamageResult
+```
+Applied, Rejected_NoTarget, Rejected_NotAuthority, Rejected_Dead, Rejected_Invulnerable,
+Rejected_Friendly, Rejected_NoAbilitySystem, Rejected_ByTarget
+```
+Outcome of a damage application request. Every rejection has its own value so callers can log or react without re-deriving the reason.
 
 ---
 
@@ -354,6 +384,31 @@ public:
 };
 ```
 
+### ICGFDamageable
+
+Implemented by: anything that can be damaged and belongs to a faction — usually a combat component on a pawn (same pattern as `IInteractable` on `UInteractableComponent`). Locate it with `UCGFCombatStatics::FindDamageable`. Damage application is **not** part of the contract; it lives with the implementer's attribute model.
+
+```cpp
+UINTERFACE(MinimalAPI, BlueprintType)
+class UCGFDamageableInterface : public UInterface { GENERATED_BODY() };
+
+class COMMONGAMEFRAMEWORK_API ICGFDamageableInterface
+{
+    GENERATED_BODY()
+public:
+    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Combat")
+    FGameplayTag GetFactionTag() const;          // Faction.*; empty = not a combatant
+
+    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Combat")
+    bool IsDead() const;
+
+    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Combat")
+    bool IsImmuneToDamage(const FCGFDamageContext& Context) const;   // Per-hit veto; default false
+};
+```
+
+Generated defaults are empty faction / not dead / not immune — implementers override all three.
+
 ---
 
 ## Gameplay Tags
@@ -407,6 +462,29 @@ Interaction.Type.Equip        — Equip an item directly from world
 Interaction.Type.Inspect      — Examine/read without taking
 ```
 
+### Combat Tags
+```
+Faction.Player                — Player characters
+Faction.Monster               — Hostile creatures and dungeon enemies
+Faction.Neutral               — Never hostile to anyone
+
+Damage.Type.Physical          — Mitigated by defense
+Damage.Type.Fire
+Damage.Type.Poison
+Damage.Type.Pure              — Unmitigated
+
+State.Dead                    — Rejects damage and ability activation
+State.Downed                  — Knocked out but recoverable
+State.Invulnerable            — Takes no damage while held
+
+Event.Combat.Damaged          — Gameplay event sent to the target ASC after a hit
+Event.Combat.Downed
+Event.Combat.Died
+
+Ability.Attack.Melee          — Ability identity for TryActivateAbilitiesByTag
+SetByCaller.Damage            — Magnitude key on damage effect specs
+```
+
 ### Extending Tags
 
 Plugins and game code can add child tags under any of these roots. For example:
@@ -447,6 +525,32 @@ public:
     static bool IsGuidValid(const FGuid& Guid);
 };
 ```
+
+---
+
+## Combat Helpers (CGFCombatStatics)
+
+Pure helpers over the combat contracts. No gameplay state and no damage application.
+
+```cpp
+UCLASS()
+class COMMONGAMEFRAMEWORK_API UCGFCombatStatics : public UBlueprintFunctionLibrary
+{
+    GENERATED_BODY()
+public:
+    // Actor itself first, then its components (C++ or Blueprint implementers)
+    static TScriptInterface<ICGFDamageableInterface> FindDamageable(AActor* Actor);
+    static FGameplayTag GetFactionTag(AActor* Actor);
+    static bool IsActorDead(AActor* Actor);
+
+    // Hostility rule v1: either empty → false; either Neutral → false; same → false; else true.
+    // One function so a faction-relationship table can replace it without touching callers.
+    static bool AreHostileFactions(FGameplayTag FactionA, FGameplayTag FactionB);
+    static bool AreHostile(AActor* ActorA, AActor* ActorB);
+};
+```
+
+Blueprint implementers leave the native interface pointer inside `TScriptInterface` null, so C++ callers go through `ICGFDamageableInterface::Execute_*` on `GetObject()`.
 
 ---
 
