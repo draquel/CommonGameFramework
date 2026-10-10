@@ -148,11 +148,12 @@ Interaction.Type.Open
 Interaction.Type.Equip
 Interaction.Type.Inspect / Interaction.Type.Search / Interaction.Type.Unlock
 Item.Key.DungeonBoss (key identity; keys are items with a Key fragment)
-Loot.Source.DungeonTreasure / Loot.Source.DungeonContainer (roll context)
+Loot.Source.DungeonTreasure / Loot.Source.DungeonContainer / Loot.Source.DungeonBoss (roll context)
 Faction.Player / Faction.Monster / Faction.Neutral
 Damage.Type.Physical / Fire / Poison / Pure
 State.Dead / State.Downed / State.Invulnerable
 Event.Combat.Damaged / Event.Combat.Downed / Event.Combat.Died
+Objective.Kind.BossKill, Event.Objective.Completed (dungeon objectives)
 Ability.Attack.Melee
 Damage.Critical
 SetByCaller.Damage / SetByCaller.Stat (root of SetByCaller.Stat.<AttributeName>)

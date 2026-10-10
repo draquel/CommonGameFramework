@@ -50,6 +50,7 @@ namespace CGFGameplayTags
 	// Loot.Source
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Loot_Source_DungeonTreasure,  "Loot.Source.DungeonTreasure",  "Roll context: a dungeon treasure-room chest");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Loot_Source_DungeonContainer, "Loot.Source.DungeonContainer", "Roll context: a searchable dungeon crate / barrel");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Loot_Source_DungeonBoss,      "Loot.Source.DungeonBoss",      "Roll context: a dungeon boss's death reward");
 
 	// Faction
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Faction_Player,  "Faction.Player",  "Player characters");
@@ -72,6 +73,10 @@ namespace CGFGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Event_Combat_Damaged, "Event.Combat.Damaged", "Sent to the target ASC after damage is applied");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Event_Combat_Downed,  "Event.Combat.Downed",  "Sent to the target ASC when it is knocked out");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Event_Combat_Died,    "Event.Combat.Died",    "Sent to the target ASC when it dies");
+
+	// Objectives
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Objective_Kind_BossKill,     "Objective.Kind.BossKill",     "Objective kind: defeat the room's boss");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Event_Objective_Completed,   "Event.Objective.Completed",   "Sent to the completing player's ASC when an objective is cleared");
 
 	// Ability
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Attack_Melee, "Ability.Attack.Melee", "Melee attack ability identity");
