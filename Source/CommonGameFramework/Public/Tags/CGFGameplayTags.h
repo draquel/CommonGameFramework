@@ -50,6 +50,9 @@ namespace CGFGameplayTags
 	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Interaction_Type_Search);
 	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Interaction_Type_Unlock);
 
+	// Crafting.Station — where a recipe may be crafted (feature 8); recipes with no station craft by hand
+	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Station_Campfire);
+
 	// Loot.Source — context tags on a loot roll, for per-source entry conditions
 	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Loot_Source_DungeonTreasure);
 	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Loot_Source_DungeonContainer);
