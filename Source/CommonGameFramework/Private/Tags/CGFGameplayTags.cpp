@@ -51,11 +51,13 @@ namespace CGFGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Loot_Source_DungeonTreasure,  "Loot.Source.DungeonTreasure",  "Roll context: a dungeon treasure-room chest");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Loot_Source_DungeonContainer, "Loot.Source.DungeonContainer", "Roll context: a searchable dungeon crate / barrel");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Loot_Source_DungeonBoss,      "Loot.Source.DungeonBoss",      "Roll context: a dungeon boss's death reward");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Loot_Source_DungeonEnemy,     "Loot.Source.DungeonEnemy",     "Roll context: a regular dungeon enemy's drop");
 
 	// Faction
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Faction_Player,  "Faction.Player",  "Player characters");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Faction_Monster, "Faction.Monster", "Hostile creatures and dungeon enemies");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Faction_Neutral, "Faction.Neutral", "Never hostile to anyone (training dummies, townsfolk)");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Faction_Object,  "Faction.Object",  "Breakable props: a valid target for anyone, never an attacker");
 
 	// Damage.Type
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Damage_Type_Physical, "Damage.Type.Physical", "Melee/ranged physical damage; mitigated by defense");

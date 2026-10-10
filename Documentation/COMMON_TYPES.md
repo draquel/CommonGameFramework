@@ -486,6 +486,7 @@ Interaction.Type.Unlock       — Unlock a lock with a key
 Loot.Source.DungeonTreasure   — Roll context: a dungeon treasure-room chest
 Loot.Source.DungeonContainer  — Roll context: a searchable dungeon crate / barrel
 Loot.Source.DungeonBoss       — Roll context: a dungeon boss's death reward
+Loot.Source.DungeonEnemy      — Roll context: a regular dungeon enemy's drop
 ```
 
 ### Combat Tags
@@ -493,6 +494,7 @@ Loot.Source.DungeonBoss       — Roll context: a dungeon boss's death reward
 Faction.Player                — Player characters
 Faction.Monster               — Hostile creatures and dungeon enemies
 Faction.Neutral               — Never hostile to anyone
+Faction.Object                — Breakable props: a valid target for anyone (Neutral included), never an attacker
 
 Damage.Type.Physical          — Mitigated by defense
 Damage.Type.Fire

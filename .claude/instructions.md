@@ -148,8 +148,8 @@ Interaction.Type.Open
 Interaction.Type.Equip
 Interaction.Type.Inspect / Interaction.Type.Search / Interaction.Type.Unlock
 Item.Key.DungeonBoss (key identity; keys are items with a Key fragment)
-Loot.Source.DungeonTreasure / Loot.Source.DungeonContainer / Loot.Source.DungeonBoss (roll context)
-Faction.Player / Faction.Monster / Faction.Neutral
+Loot.Source.DungeonTreasure / Loot.Source.DungeonContainer / Loot.Source.DungeonBoss / Loot.Source.DungeonEnemy (roll context)
+Faction.Player / Faction.Monster / Faction.Neutral / Faction.Object (props: hostile to everyone, never Object vs Object)
 Damage.Type.Physical / Fire / Poison / Pure
 State.Dead / State.Downed / State.Invulnerable
 Event.Combat.Damaged / Event.Combat.Downed / Event.Combat.Died
