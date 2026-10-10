@@ -9,6 +9,7 @@ namespace CGFGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Item_Category_Material,   "Item.Category.Material",   "Crafting materials, resources");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Item_Category_Quest,      "Item.Category.Quest",      "Quest items (often non-droppable)");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Item_Category_Misc,       "Item.Category.Misc",       "Everything else");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Item_Category_Light,      "Item.Category.Light",      "Carried light sources (torches, lanterns)");
 
 	// Item.Rarity
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Item_Rarity_Common,    "Item.Rarity.Common",    "Common rarity");
