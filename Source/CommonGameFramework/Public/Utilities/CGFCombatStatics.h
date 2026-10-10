@@ -43,7 +43,8 @@ public:
 	 *  - either is Faction.Neutral → not hostile
 	 *  - same tag → not hostile
 	 *  - otherwise → hostile
-	 * Exact-match only; nested faction tags are treated as distinct factions.
+	 * Exact-match only; nested faction tags are treated as distinct factions. Faction.Object
+	 * (breakable props) is hostile to every other faction, Neutral included; Object vs Object is not.
 	 */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "CGF|Combat")
 	static bool AreHostileFactions(FGameplayTag FactionA, FGameplayTag FactionB);

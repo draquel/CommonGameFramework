@@ -55,6 +55,15 @@ bool UCGFCombatStatics::AreHostileFactions(FGameplayTag FactionA, FGameplayTag F
 		return false;
 	}
 
+	// Breakable props (Faction.Object) are fair game for everyone, including neutrals; two objects
+	// are never hostile to each other.
+	const bool bAObject = FactionA == CGFGameplayTags::Faction_Object;
+	const bool bBObject = FactionB == CGFGameplayTags::Faction_Object;
+	if (bAObject || bBObject)
+	{
+		return !(bAObject && bBObject);
+	}
+
 	if (FactionA == CGFGameplayTags::Faction_Neutral || FactionB == CGFGameplayTags::Faction_Neutral)
 	{
 		return false;
