@@ -52,6 +52,7 @@ namespace CGFGameplayTags
 	// Loot.Source — context tags on a loot roll, for per-source entry conditions
 	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Loot_Source_DungeonTreasure);
 	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Loot_Source_DungeonContainer);
+	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Loot_Source_DungeonBoss);
 
 	// Faction — who a combatant fights for (see UCGFCombatStatics::AreHostileFactions)
 	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Faction_Player);
@@ -74,6 +75,10 @@ namespace CGFGameplayTags
 	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Combat_Damaged);
 	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Combat_Downed);
 	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Combat_Died);
+
+	// Objectives (dungeon goals; feature 4)
+	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Objective_Kind_BossKill);
+	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Objective_Completed);
 
 	// Ability — ability identity tags used for TryActivateAbilitiesByTag
 	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Attack_Melee);

@@ -485,6 +485,7 @@ Interaction.Type.Unlock       — Unlock a lock with a key
 ```
 Loot.Source.DungeonTreasure   — Roll context: a dungeon treasure-room chest
 Loot.Source.DungeonContainer  — Roll context: a searchable dungeon crate / barrel
+Loot.Source.DungeonBoss       — Roll context: a dungeon boss's death reward
 ```
 
 ### Combat Tags
@@ -506,6 +507,9 @@ State.Invulnerable            — Takes no damage while held
 Event.Combat.Damaged          — Gameplay event sent to the target ASC after a hit
 Event.Combat.Downed
 Event.Combat.Died
+Event.Objective.Completed     — Sent to the completing player's ASC when an objective is cleared
+
+Objective.Kind.BossKill       — Objective kind: defeat the room's boss (dungeon objectives, feature 4)
 
 Ability.Attack.Melee          — Ability identity for TryActivateAbilitiesByTag
 SetByCaller.Damage            — Magnitude key on damage effect specs
