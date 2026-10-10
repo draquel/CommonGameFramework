@@ -48,6 +48,9 @@ namespace CGFGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Interaction_Type_Search,  "Interaction.Type.Search",  "Search a container for loot");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Interaction_Type_Unlock,  "Interaction.Type.Unlock",  "Unlock a lock with a key");
 
+	// Crafting.Station
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Crafting_Station_Campfire, "Crafting.Station.Campfire", "Recipes crafted at a campsite / campfire");
+
 	// Loot.Source
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Loot_Source_DungeonTreasure,  "Loot.Source.DungeonTreasure",  "Roll context: a dungeon treasure-room chest");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Loot_Source_DungeonContainer, "Loot.Source.DungeonContainer", "Roll context: a searchable dungeon crate / barrel");

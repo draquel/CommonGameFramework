@@ -26,7 +26,8 @@ CommonGameFramework/
 │       │   │   ├── CGFItemStorageInterface.h         ← IItemStorage: persistence abstraction
 │       │   │   ├── CGFInteractionSourceInterface.h   ← IInteractionSource: actors that perform interactions
 │       │   │   ├── CGFDamageableInterface.h          ← IDamageable: anything with a faction that can take damage
-│       │   │   └── CGFLightBearerInterface.h         ← ILightBearer: carried light level + fuel spend (feature 7)
+│       │   │   ├── CGFLightBearerInterface.h         ← ILightBearer: carried light level + fuel spend (feature 7)
+│       │   │   └── CGFRestPointInterface.h           ← IRestPoint: rest / sleep / crafting station of a campsite (feature 8)
 │       │   ├── Types/
 │       │   │   ├── CGFItemTypes.h                    ← FItemInstance, FItemInstanceHandle, FInventorySlot
 │       │   │   ├── CGFInteractionTypes.h             ← FInteractionOption, FInteractionContext, EInteractionResult
@@ -196,6 +197,8 @@ These are the starting set. Plugins extend with their own tags but these roots m
 - `IsImmuneToDamage(FCGFDamageContext) → bool` (per-hit veto, default false)
 
 **ILightBearer** (`ICGFLightBearerInterface`) — Implemented by actors that can carry a light (the character; its equipment manager reads a `UItemFragment_LightSource` and burns the item's durability as fuel). `GetCarriedLightLevel()` (0 = dark, ~1 = torch, every machine) and `ConsumeCarriedLightFuel(Seconds)` (authority). Consumers: dungeon sconces that need a flame to be lit, NPC perception (lit bearers are noticed from farther). Generated defaults = dark. Tag `Item.Category.Light` marks light-source items.
+
+**IRestPoint** (`ICGFRestPointInterface`) — Implemented by campsites (VoxelWorldPOI): `Rest(User)` / `SleepUntilMorning(User)` (authority, false when refused), `CanSleepNow()`, `GetCraftingStationTag()` (a `Crafting.Station.*` tag, empty = no crafting). The character's campsite UI calls these through server RPCs; the rest point decides what resting means. Tag `Crafting.Station.Campfire` is the first station; recipes with no station craft by hand.
 
 Hostility rule lives in `UCGFCombatStatics::AreHostileFactions` and nowhere else, so a relationship table can replace it later.
 
