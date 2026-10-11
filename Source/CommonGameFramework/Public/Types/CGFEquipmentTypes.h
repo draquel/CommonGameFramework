@@ -24,4 +24,12 @@ struct COMMONGAMEFRAMEWORK_API FEquipmentSlotDefinition
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FName AttachSocket;
+
+	/**
+	 * Transform of the equipped visual relative to AttachSocket: corrects for the skeleton's bone frame (a spine or head
+	 * bone points along the chain, while item meshes are authored Z-up with +X forward). Per-item fit goes on the item
+	 * (UItemFragment_Equipment::AttachOffset) and is applied on top of this.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FTransform AttachOffset = FTransform::Identity;
 };
