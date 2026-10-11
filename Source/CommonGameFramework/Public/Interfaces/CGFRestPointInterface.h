@@ -38,4 +38,11 @@ public:
 	/** Crafting.Station.* this rest point offers (empty = no crafting here). */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Rest")
 	FGameplayTag GetCraftingStationTag() const;
+
+	/**
+	 * C++ implementers: an event that fires on every machine when CanSleepNow() may have changed (the day phase
+	 * turned), so open UI can refresh instead of polling. Null (the default) means the rest point does not report.
+	 * @return The event, or null
+	 */
+	virtual FSimpleMulticastDelegate* GetSleepAvailabilityChangedEvent() { return nullptr; }
 };
