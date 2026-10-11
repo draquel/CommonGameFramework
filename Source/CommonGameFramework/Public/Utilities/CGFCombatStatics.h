@@ -41,6 +41,7 @@ public:
 	 * Hostility rule between two faction tags (v1):
 	 *  - either tag empty  → not hostile (non-combatants are never valid targets)
 	 *  - either is Faction.Neutral → not hostile
+	 *  - Faction.Animal (wildlife) is hostile to Player and Monster like any other faction, never to Animal
 	 *  - same tag → not hostile
 	 *  - otherwise → hostile
 	 * Exact-match only; nested faction tags are treated as distinct factions. Faction.Object

@@ -150,8 +150,8 @@ Interaction.Type.Open
 Interaction.Type.Equip
 Interaction.Type.Inspect / Interaction.Type.Search / Interaction.Type.Unlock
 Item.Key.DungeonBoss (key identity; keys are items with a Key fragment)
-Loot.Source.DungeonTreasure / Loot.Source.DungeonContainer / Loot.Source.DungeonBoss / Loot.Source.DungeonEnemy (roll context)
-Faction.Player / Faction.Monster / Faction.Neutral / Faction.Object (props: hostile to everyone, never Object vs Object)
+Loot.Source.DungeonTreasure / Loot.Source.DungeonContainer / Loot.Source.DungeonBoss / Loot.Source.DungeonEnemy / Loot.Source.SurfaceNPC (roll context)
+Faction.Player / Faction.Monster / Faction.Neutral / Faction.Object (props: hostile to everyone, never Object vs Object) / Faction.Animal (wildlife, feature 10: hunted by Player and Monster, animals never fight each other)
 Damage.Type.Physical / Fire / Poison / Pure
 State.Dead / State.Downed / State.Invulnerable
 Event.Combat.Damaged / Event.Combat.Downed / Event.Combat.Died
