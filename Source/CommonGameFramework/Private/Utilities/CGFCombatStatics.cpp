@@ -69,6 +69,8 @@ bool UCGFCombatStatics::AreHostileFactions(FGameplayTag FactionA, FGameplayTag F
 		return false;
 	}
 
+	// Wildlife (Faction.Animal, feature 10): hunted by players and monsters, but animals never fight each other.
+	// Everything else: different factions are hostile.
 	return FactionA != FactionB;
 }
 
