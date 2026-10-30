@@ -760,7 +760,7 @@ Phase 12: Testing & Example Content    Automation tests, sample assets
 2.  Source/CommonGameFramework/CommonGameFramework.Build.cs
 3.  Source/CommonGameFramework/Public/CommonGameFramework.h          (Module API macro)
 4.  Source/CommonGameFramework/Private/CommonGameFramework.cpp        (Module impl)
-5.  Source/CommonGameFramework/Public/Types/CGFCommonEnums.h          (EItemRarity, EInventoryOperationResult, EInteractionResult, EEquipmentResult)
+5.  Source/CommonGameFramework/Public/Types/CGFCommonEnums.h          (EInventoryOperationResult, EInteractionResult, EEquipmentResult)
 6.  Source/CommonGameFramework/Public/Types/CGFItemTypes.h            (FItemInstance, FInventorySlot, UItemInstanceFragment base)
 7.  Source/CommonGameFramework/Private/Types/CGFItemTypes.cpp         (NetSerialize, IsValid, operators)
 8.  Source/CommonGameFramework/Public/Types/CGFInteractionTypes.h     (FInteractionOption, FInteractionContext)

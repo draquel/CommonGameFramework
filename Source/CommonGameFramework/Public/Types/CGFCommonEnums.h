@@ -4,16 +4,6 @@
 #include "CGFCommonEnums.generated.h"
 
 UENUM(BlueprintType)
-enum class EItemRarity : uint8
-{
-	Common,
-	Uncommon,
-	Rare,
-	Epic,
-	Legendary
-};
-
-UENUM(BlueprintType)
 enum class EInventoryOperationResult : uint8
 {
 	Success,
