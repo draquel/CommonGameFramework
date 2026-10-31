@@ -4,8 +4,6 @@
 #include "GameplayEffect.h"
 #include "CommonGameFramework.h"
 
-DEFINE_LOG_CATEGORY_STATIC(LogCGFEffects, Log, All);
-
 FCGFAttributeModifier UCGFGameplayEffectStatics::MakeAttributeModifier(TSubclassOf<UAttributeSet> AttributeSet, FName AttributeName, float Magnitude, bool& bOutValid)
 {
 	FCGFAttributeModifier Modifier;
@@ -21,7 +19,7 @@ FCGFAttributeModifier UCGFGameplayEffectStatics::MakeAttributeModifier(TSubclass
 	}
 	if (!bOutValid)
 	{
-		UE_LOG(LogCGFEffects, Warning, TEXT("MakeAttributeModifier: %s has no attribute '%s'."), *GetNameSafe(AttributeSet), *AttributeName.ToString());
+		UE_LOG(LogCGF, Warning, TEXT("MakeAttributeModifier: %s has no attribute '%s'."), *GetNameSafe(AttributeSet), *AttributeName.ToString());
 	}
 	return Modifier;
 }
@@ -105,7 +103,7 @@ FActiveGameplayEffectHandle UCGFGameplayEffectStatics::ApplyStatModifierEffect(U
 	const UGameplayEffect* Effect = EffectClass->GetDefaultObject<UGameplayEffect>();
 	if (!Effect || Effect->DurationPolicy == EGameplayEffectDurationType::Instant)
 	{
-		UE_LOG(LogCGFEffects, Warning, TEXT("ApplyStatModifierEffect: %s must be a duration/infinite effect."), *GetNameSafe(EffectClass));
+		UE_LOG(LogCGF, Warning, TEXT("ApplyStatModifierEffect: %s must be a duration/infinite effect."), *GetNameSafe(EffectClass));
 		return FActiveGameplayEffectHandle();
 	}
 
@@ -147,7 +145,7 @@ FActiveGameplayEffectHandle UCGFGameplayEffectStatics::ApplyStatModifierEffect(U
 		const FGameplayTag Tag = MakeStatSetByCallerTag(Modifier.Attribute);
 		if (!Tag.IsValid() || !CoveredByTag.Contains(Tag))
 		{
-			UE_LOG(LogCGFEffects, Warning, TEXT("ApplyStatModifierEffect: %s has no SetByCaller modifier for attribute %s (expected tag %s.%s); skipped."),
+			UE_LOG(LogCGF, Warning, TEXT("ApplyStatModifierEffect: %s has no SetByCaller modifier for attribute %s (expected tag %s.%s); skipped."),
 				*GetNameSafe(EffectClass), *Modifier.Attribute.GetName(), *CGFGameplayTags::SetByCaller_Stat.GetTag().ToString(), *Modifier.Attribute.GetName());
 			continue;
 		}
