@@ -1,5 +1,7 @@
 #include "CommonGameFramework.h"
 
+DEFINE_LOG_CATEGORY(LogCGF);
+
 #define LOCTEXT_NAMESPACE "FCommonGameFrameworkModule"
 
 void FCommonGameFrameworkModule::StartupModule()
