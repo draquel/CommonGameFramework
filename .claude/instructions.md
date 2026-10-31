@@ -34,7 +34,7 @@ CommonGameFramework/
 │       │   │   ├── CGFEquipmentTypes.h               ← FEquipmentSlotDefinition, EEquipmentResult
 │       │   │   ├── CGFLootTypes.h                    ← FLootContext, FLootResult
 │       │   │   ├── CGFCombatTypes.h                  ← FCGFDamageContext, ECGFDamageResult
-│       │   │   └── CGFCommonEnums.h                  ← EItemRarity, EInventoryOperation, shared enums
+│       │   │   └── CGFCommonEnums.h                  ← EInventoryOperation, shared enums
 │       │   ├── Tags/
 │       │   │   └── CGFGameplayTags.h                 ← Native gameplay tag declarations
 │       │   ├── Utilities/

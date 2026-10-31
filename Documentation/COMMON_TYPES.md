@@ -250,11 +250,7 @@ struct COMMONGAMEFRAMEWORK_API FCGFAttributeModifier
 
 ## Enums
 
-### EItemRarity
-```
-Common, Uncommon, Rare, Epic, Legendary
-```
-Maps to `Item.Rarity.*` gameplay tags. The enum exists for C++ switch statements and comparisons; the tag is used for data-driven queries.
+Rarity is the `Item.Rarity.*` gameplay tag alone (the `EItemRarity` enum was named by nothing and was deleted in CR1, FW-11).
 
 ### EInventoryOperationResult
 ```

@@ -13,7 +13,6 @@ public class CommonGameFramework : ModuleRules
 			"Engine",
 			"GameplayTags",
 			"GameplayAbilities",
-			"GameplayTasks",
 			"NetCore",
 		});
 	}
