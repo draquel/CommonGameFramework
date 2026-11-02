@@ -204,10 +204,13 @@ mutation. State reaches clients by replication:
 Clients call the public `Try*` functions; on a client these send a reliable Server RPC and return `Pending` (inventory),
 `Success` (equipment, optimistic) or `InProgress` (interaction). A rejected request comes back through a Client RPC
 (`ClientRPC_OperationFailed`, `ClientRPC_EquipmentOperationFailed`, `ClientRPC_InteractionResult`) that fires the
-component's failure delegate.
+component's failure delegate. The functions that take a whole item have no RPC and return `NotAuthorized` on a client
+(§3.3). A channeled interaction completes on the server only; the client's channel shows progress until the server's
+`ClientRPC_InteractionResult` ends it (G92).
 
 No replication functional test (dedicated server plus client) exists yet; the decision on writing one is open (D-CR23,
-FW-34).
+FW-34). The RPC bodies are tested by simulation: `CGFTesting::FRPCCall` delivers a client's request to the server's
+component in one standalone world (`ItemInventory.Authority.*`, `Equipment.Authority.*`, `Interaction.Channeled.*`).
 
 ### 3.2 Pickup Flow (Multiplayer)
 
@@ -218,7 +221,7 @@ CLIENT                                   SERVER
    timer picks the AWorldItem as the
    best target (local player only)
 2. Interact input → TryInteract(Type)
-   → ValidateInteraction (range,
+   → CheckInteraction (range,
      enabled, CanInteract)
 3. ServerRPC_RequestInteract ──────────► 4. Re-checks: target valid, within 1.1 x
    (Target, InteractionType)                InteractionRange, has an enabled
@@ -241,22 +244,28 @@ const predicate both sides call. The plugins today:
 
 | Component | Shared predicate | Inline in the Server RPC |
 |-----------|------------------|--------------------------|
-| `UInventoryComponent` | `ValidateAddItem` / `ValidateRemoveItem` (fill `FInventoryOperationData`), used by `TryAddItem`, `TryRemoveItem`, `TryMoveItem` (both inventories) and their RPCs | split, merge and swap repeat their checks in `TrySplitStack` / `TryMergeStacks` / `TrySwapSlots` and again in the RPC |
-| `UEquipmentManagerComponent` | `ValidateEquip` (returns `EEquipmentResult`), `CanEquipItem` | the unequip RPCs check the slot and the target inventory's `CanAcceptItem` |
-| `UInteractionComponent` | `ValidateInteraction` (client side, before the RPC) | `ServerRPC_RequestInteract` repeats range (with 10% tolerance), interactable and `CanInteract` |
+| `UInventoryComponent` | `ValidateRemoveItem` / `ValidateMoveItem` (fill `FInventoryOperationData`), used by `TryRemoveItem`, `TryMoveItem` and their RPCs; `ValidateAddItem` / `ValidateAddItemAtSlot` / `ValidateReplaceItem` on the authority | split, merge and swap repeat their checks in `TrySplitStack` / `TryMergeStacks` / `TrySwapSlots` and again in the RPC |
+| `UEquipmentManagerComponent` | `ValidateEquip` (returns `EEquipmentResult`), `CanEquipItem`, `ValidateEquipFromInventory`, `ValidateUnequipToInventory` | the inventory RPCs first check the inventory is the requester's (`IsOwnersInventory`) |
+| `UInteractionComponent` | `CheckInteraction` (returns `EInteractionResult`): the client before it sends, and both server RPCs with 10% range tolerance | the channeled start also checks the option is offered and takes its `HoldDuration` as the floor |
+
+**Clients name items; they never send them (G91).** Every request a client can make refers to an item the server
+already holds: an instance id in an inventory (remove, move, split, merge, equip from, unequip to), a slot, a recipe or
+an interactable. The operations that take a whole `FItemInstance`, `UInventoryComponent::TryAddItem` /
+`TryReplaceItem` and `UEquipmentManagerComponent::TryEquip` / `TryEquipToSlot`, run on the authority only and return
+`NotAuthorized` on a client; items enter the game from server code (loot, crafting, pickups, gathering, saves). The
+listen-server host has authority and calls them directly.
 
 ```cpp
 EInventoryOperationResult UInventoryComponent::TryAddItem(const FItemInstance& Item, int32 PreferredSlot)
 {
+    if (!HasMutationAuthority())                          // a client: no request carries an item (G91)
+    {
+        return EInventoryOperationResult::NotAuthorized;
+    }
     FInventoryOperationData OpData;
-    if (!ValidateAddItem(Item, PreferredSlot, OpData))   // same check on client and server
+    if (!ValidateAddItem(Item, PreferredSlot, OpData))
     {
         return OpData.Result;
-    }
-    if (GetOwner() && !GetOwner()->HasAuthority())
-    {
-        ServerRPC_RequestAddItem(Item, PreferredSlot);    // re-validates, ClientRPC_OperationFailed on rejection
-        return EInventoryOperationResult::Pending;
     }
     Internal_AddItemStacked(Item, PreferredSlot);         // stacks first, then empty slots
     return EInventoryOperationResult::Success;
@@ -265,10 +274,12 @@ EInventoryOperationResult UInventoryComponent::TryAddItem(const FItemInstance& I
 
 ### 3.4 Cross-Inventory Transfers
 
-`TryMoveItem` checks both sides before touching either: the target's `ValidateAddItem` for a copy of the item, the
-source's `ValidateRemoveItem`. Only then does the server remove the whole stack from the source and add the copy to the
-target. Equipment's `TryEquipFromInventory` / `TryUnequipToInventory` follow the same order and re-equip the item if the
-inventory add fails after validation.
+`TryMoveItem` checks both sides before touching either (`ValidateMoveItem`): the source's `ValidateRemoveItem`, then
+the target's `ValidateAddItem` for a copy of the item, or `ValidateAddItemAtSlot` when a slot is named (G94: the copy
+lands in that slot or merges whole into the same item's stack there). Only then does the server remove the whole stack
+from the source and add the copy to the target. Equipment's `TryEquipFromInventory` swaps through
+`TryReplaceItem` (the old item takes the new one's inventory slot, validated whole) and `TryUnequipToInventory` re-equips
+the item if the inventory add fails after validation: no item is dropped (G90).
 
 ---
 
@@ -316,9 +327,10 @@ other's delegates; EquipmentPlugin calls inventory functions directly when equip
 UI (game layer) → UEquipmentManagerComponent::TryEquipFromInventory(InstanceId, Inventory, SlotTag)
   → finds the item in the inventory, picks a slot (FindTargetSlot) when none is given
   → ValidateEquip: valid item, an Equipment fragment, the slot exists, item tags match the slot
-  → client: ServerRPC_RequestEquipFromInventory and return
-  → server: slot occupied → the old item back to the inventory (NoInventorySpace when it does not fit)
-  → Inventory->TryRemoveItem(InstanceId)
+  → client: ServerRPC_RequestEquipFromInventory(InstanceId, Inventory, SlotTag) and return
+  → server: the inventory must be the requester's; the checks again
+  → slot occupied → Inventory->TryReplaceItem(InstanceId, old item) (NoInventorySpace when it cannot take the slot);
+    slot empty → Inventory->TryRemoveItem(InstanceId)
   → Internal_Equip: visuals (async mesh, socket), GAS (when the GAS module is loaded), OnItemEquipped, OnPostEquip
   → EquipmentSlots replicate; clients attach visuals in OnRep_EquipmentSlots
 ```

@@ -43,7 +43,7 @@ CommonGameFramework/
 │   │   │   ├── CGFStatics.h                     ← item / tag / GUID helpers
 │   │   │   ├── CGFCombatStatics.h               ← FindDamageable, the hostility rule
 │   │   │   └── CGFGameplayEffectStatics.h       ← apply FCGFAttributeModifier lists (instant / SetByCaller.Stat.*)
-│   │   ├── Testing/CGFTestGameInstance.h        ← CGFTesting::FTestGameInstance (automation tests only)
+│   │   ├── Testing/CGFTestGameInstance.h        ← CGFTesting::FTestGameInstance, FRPCCall (automation tests only)
 │   │   └── CommonGameFramework.h                ← module header, log category LogCGF
 │   └── Private/ (Tags, Types, Utilities, CommonGameFramework.cpp)
 └── CommonGameFramework.uplugin                  ← requires GameplayAbilities
@@ -83,4 +83,6 @@ PublicDependencyModuleNames: Core, CoreUObject, Engine, GameplayTags,
 
 - Log category `LogCGF` (`CommonGameFramework.h`).
 - The module has no tests of its own; its types are exercised by ItemInventoryPlugin's `ItemInventory.Types.*` tests and
-  the other plugins' suites. `CGFTesting::FTestGameInstance` gives those tests a game instance and world.
+  the other plugins' suites. `CGFTesting::FTestGameInstance` gives those tests a game instance and world;
+  `SpawnRemoteOwner` an actor as a client sees its own pawn (no authority), and `CGFTesting::FRPCCall` delivers an RPC
+  by name with its parameters (a standalone world runs it locally), so a test plays both machines of a request.
