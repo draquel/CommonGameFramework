@@ -104,8 +104,10 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEquipmentChanged);
 // Delegates — Storage
 // ---------------------------------------------------------------------------
 
-DECLARE_DYNAMIC_DELEGATE_OneParam(FOnStorageComplete, bool, bSuccess);
-DECLARE_DYNAMIC_DELEGATE_TwoParams(FOnStorageLoadComplete, bool, bSuccess, const TArray<FItemInstance>&, Items);
+/** An asynchronous storage save or delete finished (ICGFItemStorageInterface): the inventory's id and whether it landed. */
+DECLARE_DYNAMIC_DELEGATE_TwoParams(FOnStorageComplete, const FString&, OwnerId, bool, bSuccess);
+/** An asynchronous storage load finished: the inventory's id, whether the read succeeded, and the items read. */
+DECLARE_DYNAMIC_DELEGATE_ThreeParams(FOnStorageLoadComplete, const FString&, OwnerId, bool, bSuccess, const TArray<FItemInstance>&, Items);
 
 // ---------------------------------------------------------------------------
 // FInventorySlot — wraps FItemInstance for replication

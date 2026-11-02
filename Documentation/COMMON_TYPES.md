@@ -373,13 +373,18 @@ bool LoadBlob(const FString& Key, FString& OutJson);
 bool DeleteBlob(const FString& Key);
 bool HasBlob(const FString& Key);
 
-// C++ only, default bodies do nothing
-virtual void SaveInventoryAsync(const FString& OwnerId, const TArray<FItemInstance>& Items,
-    const FOnStorageComplete& Callback);
-virtual void LoadInventoryAsync(const FString& OwnerId, const FOnStorageLoadComplete& Callback);
+// Asynchronous (G93): return at once, report on the game thread through the callback
+void SaveInventoryAsync(const FString& OwnerId, const TArray<FItemInstance>& Items, const FOnStorageComplete& Callback);
+void LoadInventoryAsync(const FString& OwnerId, const FOnStorageLoadComplete& Callback);
+void DeleteInventoryAsync(const FString& OwnerId, const FOnStorageComplete& Callback);
 ```
 
-Generated defaults of the blob functions do nothing and return false.
+Generated defaults of the blob functions do nothing and return false. The asynchronous calls default to the synchronous
+ones with the callback run at once, so a backend that answers at once implements only the synchronous calls; a backend
+that waits on a network implements the asynchronous ones (`URemoteItemStorage`). The ordering rule every backend keeps:
+for one `OwnerId`, operations land in the order requested, and of overlapping saves the last one requested is the one
+that lands (a superseded save's callback reports the save that superseded it). A load's `bSuccess` false means the read
+failed (keep what you have); true with no items means nothing is stored.
 
 ### ICGFInteractionSourceInterface
 
@@ -621,8 +626,8 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnItemUnequipped, const FItemInsta
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEquipmentChanged);
 
 // Storage callbacks
-DECLARE_DYNAMIC_DELEGATE_OneParam(FOnStorageComplete, bool, bSuccess);
-DECLARE_DYNAMIC_DELEGATE_TwoParams(FOnStorageLoadComplete, bool, bSuccess, const TArray<FItemInstance>&, Items);
+DECLARE_DYNAMIC_DELEGATE_TwoParams(FOnStorageComplete, const FString&, OwnerId, bool, bSuccess);
+DECLARE_DYNAMIC_DELEGATE_ThreeParams(FOnStorageLoadComplete, const FString&, OwnerId, bool, bSuccess, const TArray<FItemInstance>&, Items);
 
 // Interaction events (CGFInteractionTypes.h)
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnInteractableFound, AActor*, InteractableActor);
