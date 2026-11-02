@@ -129,8 +129,8 @@ Instance → Actor:        UWorldItemPoolSubsystem::SpawnWorldItem(Item, Locatio
 Actor → Instance:        the pickup handler adds the FItemInstance to the interactor's
                          inventory and returns the actor to the pool
 
-Instance → Storage:      ICGFItemStorageInterface::SaveInventory(OwnerId, Items)
-Storage → Instance:      ICGFItemStorageInterface::LoadInventory(OwnerId)
+Instance → Storage:      ICGFItemStorageInterface::SaveInventoryAsync(OwnerId, Items, Callback)
+Storage → Instance:      ICGFItemStorageInterface::LoadInventoryAsync(OwnerId, Callback)
 ```
 
 ### 2.2 Fragment Architecture
@@ -370,17 +370,19 @@ UInventoryComponent (StorageOwnerId set, bAutoRegisterStorage)
   │ registers in BeginPlay, unregisters in EndPlay (saving it when dirty)
   ▼
 UItemStorageSubsystem (UGameInstanceSubsystem)
-  │ auto-save timer: every AutoSaveIntervalSeconds (30 s) saves each dirty inventory
+  │ auto-save timer: every AutoSaveIntervalSeconds (30 s) starts saving each dirty inventory (asynchronous,
+  │ fire-and-forget; a failed save marks the inventory dirty again; OnInventorySaved / OnInventoryLoaded report)
   │ Deinitialize: SaveAll
   │ ManualSave / ManualLoad on the component go through it
   ▼
 ICGFItemStorageInterface backend, chosen by UItemSystemSettings::StorageBackend
 (Project Settings > Plugins > Item System)
   ├── ULocalItemStorage   JSON at Saved/SaveGames/Inventories/<OwnerId>.json (write to .tmp, then rename)
-  └── URemoteItemStorage  HTTP POST / GET / DELETE <RemoteEndpointURL>/<OwnerId>, bearer token, retries
+  └── URemoteItemStorage  HTTP POST / GET / DELETE <RemoteEndpointURL>/<OwnerId>, bearer token, one request in
+                          flight per resource, retries on timers (never waits on the game thread, G93)
 ```
 
-Every mutation marks the component dirty; a save clears it. The same backend stores opaque JSON blobs
+Every mutation marks the component dirty; starting a save clears it. The same backend stores opaque JSON blobs
 (`SaveBlob` / `LoadBlob` / `DeleteBlob` / `HasBlob`) that the world save (VoxelWorldSave) uses. The serialization format
 and the backends' details are in `Plugins/ItemInventoryPlugin/Documentation/ITEM_INVENTORY_SYSTEM.md`.
 
