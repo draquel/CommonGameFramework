@@ -1,244 +1,86 @@
 # CommonGameFramework — Plugin Instructions
 
+> State as of 2026-11-02 (code review CR5).
+
 ## Purpose
 
-This is the foundation module that all other game framework plugins depend on. It contains shared types, interfaces, gameplay tag declarations, and utility functions. **This module must have zero dependencies on any other game framework plugin.**
+The foundation every game framework plugin depends on: shared types, the eight `ICGF*` interfaces, the native gameplay
+tags, and static helpers. **This module has no dependency on any other game framework plugin**, and it holds no gameplay
+logic.
 
-## Documentation
+## Reading Order
 
-This plugin's `Documentation/` folder contains:
-- `ARCHITECTURE.md` — The master architecture document for the entire plugin suite. Covers system architecture, data flow, replication model, cross-plugin integration, performance strategies, and the phased implementation plan.
-- `COMMON_TYPES.md` — Detailed reference for all shared types, interfaces, and gameplay tags defined in this module.
-
-**Read `Documentation/ARCHITECTURE.md` before starting any new phase of implementation across any plugin.**
+1. `Documentation/ARCHITECTURE.md` — how the four framework plugins fit together: layers and dependencies, the item
+   lifecycle, replication and validation, cross-plugin contracts, persistence, extension points.
+2. `Documentation/COMMON_TYPES.md` — the reference for every struct, enum, interface, delegate and tag defined here.
+3. The consuming plugin's instructions and system document when a change here affects it.
 
 ## Module Structure
 
 ```
 CommonGameFramework/
-├── Source/
-│   └── CommonGameFramework/
-│       ├── Public/
-│       │   ├── Interfaces/
-│       │   │   ├── CGFInteractableInterface.h       ← IInteractable: anything the player can interact with
-│       │   │   ├── CGFInventoryInterface.h           ← IInventoryOwner: any actor that owns inventories
-│       │   │   ├── CGFEquippableInterface.h          ← IEquippable: items that can be equipped
-│       │   │   ├── CGFItemStorageInterface.h         ← IItemStorage: persistence abstraction
-│       │   │   ├── CGFInteractionSourceInterface.h   ← IInteractionSource: actors that perform interactions
-│       │   │   ├── CGFDamageableInterface.h          ← IDamageable: anything with a faction that can take damage
-│       │   │   ├── CGFLightBearerInterface.h         ← ILightBearer: carried light level + fuel spend (feature 7)
-│       │   │   └── CGFRestPointInterface.h           ← IRestPoint: rest / sleep / crafting station of a campsite (feature 8)
-│       │   ├── Types/
-│       │   │   ├── CGFItemTypes.h                    ← FItemInstance, FItemInstanceHandle, FInventorySlot
-│       │   │   ├── CGFInteractionTypes.h             ← FInteractionOption, FInteractionContext, EInteractionResult
-│       │   │   ├── CGFEquipmentTypes.h               ← FEquipmentSlotDefinition, EEquipmentResult
-│       │   │   ├── CGFLootTypes.h                    ← FLootContext, FLootResult
-│       │   │   ├── CGFCombatTypes.h                  ← FCGFDamageContext, ECGFDamageResult
-│       │   │   └── CGFCommonEnums.h                  ← EInventoryOperation, shared enums
-│       │   ├── Tags/
-│       │   │   └── CGFGameplayTags.h                 ← Native gameplay tag declarations
-│       │   ├── Utilities/
-│       │   │   ├── CGFStatics.h                      ← Static helper functions, math, validation
-│       │   │   ├── CGFCombatStatics.h                ← FindDamageable, faction hostility rule
-│       │   │   └── CGFGameplayEffectStatics.h        ← Apply FCGFAttributeModifier lists (instant / SetByCaller.Stat.* class)
-│       │   └── CommonGameFramework.h                 ← Module API macro
-│       └── Private/
-│           ├── Tags/
-│           │   └── CGFGameplayTags.cpp
-│           ├── Utilities/
-│           │   ├── CGFStatics.cpp
-│           │   ├── CGFCombatStatics.cpp
-│           │   └── CGFGameplayEffectStatics.cpp
-│           └── CommonGameFramework.cpp
-└── CommonGameFramework.uplugin
+├── Source/CommonGameFramework/
+│   ├── Public/
+│   │   ├── Interfaces/
+│   │   │   ├── CGFInteractableInterface.h       ← ICGFInteractableInterface (implemented by nothing today)
+│   │   │   ├── CGFInventoryInterface.h          ← ICGFInventoryInterface: an actor's inventory component(s)
+│   │   │   ├── CGFEquippableInterface.h         ← ICGFEquippableInterface (implemented by nothing today)
+│   │   │   ├── CGFItemStorageInterface.h        ← ICGFItemStorageInterface: inventories and blobs persistence
+│   │   │   ├── CGFInteractionSourceInterface.h  ← ICGFInteractionSourceInterface (implemented by nothing today)
+│   │   │   ├── CGFDamageableInterface.h         ← ICGFDamageableInterface: faction, dead, per-hit veto
+│   │   │   ├── CGFLightBearerInterface.h        ← ICGFLightBearerInterface: carried light level, fuel spend
+│   │   │   └── CGFRestPointInterface.h          ← ICGFRestPointInterface: rest / sleep / crafting station
+│   │   ├── Types/
+│   │   │   ├── CGFItemTypes.h                   ← UItemInstanceFragment, FItemInstance, FInventorySlot,
+│   │   │   │                                       FInventorySlotArray; inventory, equipment, storage delegates
+│   │   │   ├── CGFInteractionTypes.h            ← FInteractionOption, FInteractionContext, interaction delegates
+│   │   │   ├── CGFEquipmentTypes.h              ← FEquipmentSlotDefinition
+│   │   │   ├── CGFLootTypes.h                   ← FLootContext, FLootResult
+│   │   │   ├── CGFCombatTypes.h                 ← FCGFDamageContext, ECGFDamageResult, FCGFAttributeModifier
+│   │   │   └── CGFCommonEnums.h                 ← EInventoryOperationResult, EInteractionResult, EEquipmentResult
+│   │   ├── Tags/CGFGameplayTags.h               ← native tag declarations (namespace CGFGameplayTags)
+│   │   ├── Utilities/
+│   │   │   ├── CGFStatics.h                     ← item / tag / GUID helpers
+│   │   │   ├── CGFCombatStatics.h               ← FindDamageable, the hostility rule
+│   │   │   └── CGFGameplayEffectStatics.h       ← apply FCGFAttributeModifier lists (instant / SetByCaller.Stat.*)
+│   │   ├── Testing/CGFTestGameInstance.h        ← CGFTesting::FTestGameInstance (automation tests only)
+│   │   └── CommonGameFramework.h                ← module header, log category LogCGF
+│   └── Private/ (Tags, Types, Utilities, CommonGameFramework.cpp)
+└── CommonGameFramework.uplugin                  ← requires GameplayAbilities
 ```
 
-## Key Design Decisions
+## Rules for This Module
 
-### FItemInstance (The Core Struct)
-
-This is the most important type in the entire system. Every plugin touches it.
-
-```cpp
-USTRUCT(BlueprintType)
-struct COMMONGAMEFRAMEWORK_API FItemInstance
-{
-    GENERATED_BODY()
-
-    // Globally unique ID for this specific instance — stable across network
-    UPROPERTY(BlueprintReadOnly)
-    FGuid InstanceId;
-
-    // Reference to the item definition data asset (PrimaryAssetId for async loading)
-    UPROPERTY(BlueprintReadOnly)
-    FPrimaryAssetId ItemDefinitionId;
-
-    // Current stack count
-    UPROPERTY(BlueprintReadOnly)
-    int32 StackCount = 1;
-
-    // Instance-specific mutable data (durability, enchantments, etc.)
-    // Uses instanced sub-objects for polymorphic per-instance state
-    UPROPERTY(BlueprintReadOnly, Instanced)
-    TArray<TObjectPtr<UItemInstanceFragment>> InstanceFragments;
-
-    bool IsValid() const;
-    bool operator==(const FItemInstance& Other) const;
-
-    // Net serialization
-    bool NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& bOutSuccess);
-};
-
-template<>
-struct TStructOpsTypeTraits<FItemInstance> : public TStructOpsTypeTraitsBase2<FItemInstance>
-{
-    enum
-    {
-        WithNetSerializer = true,
-        WithIdenticalViaEquality = true,
-    };
-};
-```
-
-**Critical rules for FItemInstance:**
-- Always create with a valid FGuid (FGuid::NewGuid() on the server, never on the client)
-- InstanceId is the primary key for all operations — never reference items by array index across the network
-- ItemDefinitionId uses FPrimaryAssetId so the actual data asset can be async loaded
-- StackCount must always be >= 1 for valid instances (0 means the instance should be removed)
-- InstanceFragments are UObject-based (not struct) because they need polymorphism for the fragment pattern — this is the ONE place we use UObjects for item data, and they're instanced subobjects owned by the inventory component
-
-### Instance Fragments vs Definition Fragments
-
-- **Definition Fragments** (`UItemDefinitionFragment`, defined in ItemInventoryPlugin): Live on the item data asset. Static, shared across all instances. Example: "this is a weapon with base damage 50."
-- **Instance Fragments** (`UItemInstanceFragment`, defined here in Common): Live on FItemInstance. Per-instance mutable state. Example: "this specific sword has 73/100 durability."
-
-Instance fragment base class lives in CommonGameFramework because both the EquipmentPlugin and ItemInventoryPlugin need to work with them. Definition fragment base class lives in ItemInventoryPlugin because only that plugin defines item data assets.
-
-### Gameplay Tags
-
-Declare all shared tag roots as native gameplay tags in CGFGameplayTags.h:
-
-```
-Item.Category.Weapon
-Item.Category.Armor
-Item.Category.Consumable
-Item.Category.Material
-Item.Category.Quest
-Item.Category.Misc
-Item.Rarity.Common
-Item.Rarity.Uncommon
-Item.Rarity.Rare
-Item.Rarity.Epic
-Item.Rarity.Legendary
-Inventory.Type.Player
-Inventory.Type.Container
-Inventory.Type.NPC
-Inventory.Type.Loot
-Equipment.Slot.Head
-Equipment.Slot.Chest
-Equipment.Slot.Legs
-Equipment.Slot.Feet
-Equipment.Slot.Hands
-Equipment.Slot.MainHand
-Equipment.Slot.OffHand
-Equipment.Slot.Accessory1
-Equipment.Slot.Accessory2
-Interaction.Type.Pickup
-Interaction.Type.Drop
-Interaction.Type.Use
-Interaction.Type.Open
-Interaction.Type.Equip
-Interaction.Type.Inspect / Interaction.Type.Search / Interaction.Type.Unlock
-Item.Key.DungeonBoss (key identity; keys are items with a Key fragment)
-Loot.Source.DungeonTreasure / Loot.Source.DungeonContainer / Loot.Source.DungeonBoss / Loot.Source.DungeonEnemy / Loot.Source.SurfaceNPC (roll context)
-Faction.Player / Faction.Monster / Faction.Neutral / Faction.Object (props: hostile to everyone, never Object vs Object) / Faction.Animal (wildlife, feature 10: hunted by Player and Monster, animals never fight each other)
-Damage.Type.Physical / Fire / Poison / Pure
-State.Dead / State.Downed / State.Invulnerable
-Event.Combat.Damaged / Event.Combat.Downed / Event.Combat.Died
-Objective.Kind.BossKill, Event.Objective.Completed (dungeon objectives)
-Ability.Attack.Melee
-Damage.Critical
-SetByCaller.Damage / SetByCaller.Stat (root of SetByCaller.Stat.<AttributeName>)
-```
-
-**Data-driven stats:** `FCGFAttributeModifier` {Attribute, Magnitude} lives here so item fragments (ItemInventoryPlugin) and the appliers (EquipmentPlugin, VoxelCharacterPlugin) share one type. `UCGFGameplayEffectStatics` applies lists: instant via a transient effect, lasting via a game-supplied class with `SetByCaller.Stat.<Name>` modifiers (transient infinite effects do not replicate to the owning client — never do that).
-
-These are the starting set. Plugins extend with their own tags but these roots must be defined here so cross-plugin code can reference them.
-
-### Interfaces
-
-**IInteractable** — Implemented by anything in the world that can be interacted with.
-- `CanInteract(AActor* Interactor, FInteractionContext Context) → bool`
-- `GetInteractionOptions(AActor* Interactor) → TArray<FInteractionOption>`
-- `Interact(AActor* Interactor, FGameplayTag InteractionType) → EInteractionResult`
-
-**IInventoryOwner** — Implemented by actors that have inventory components.
-- `GetInventoryComponent() → UInventoryComponent*`
-- `GetInventoryComponents() → TArray<UInventoryComponent*>` (for actors with multiple inventories)
-
-**IEquippable** — Queried on item definitions to determine equipment behavior.
-- `GetEquipmentSlot() → FGameplayTag`
-- `GetGrantedAbilities() → TArray<TSubclassOf<UGameplayAbility>>`
-- `GetAppliedEffects() → TArray<TSubclassOf<UGameplayEffect>>`
-
-**IItemStorage** — Persistence abstraction.
-- `SaveInventory(FString OwnerId, TArray<FItemInstance> Items) → bool`
-- `LoadInventory(FString OwnerId) → TArray<FItemInstance>`
-- `SaveInventoryAsync(FString OwnerId, TArray<FItemInstance> Items, FOnStorageComplete Callback)`
-- `LoadInventoryAsync(FString OwnerId, FOnStorageComplete Callback)`
-- `DeleteInventory(FString OwnerId) → bool`
-
-**IInteractionSource** — Implemented by actors that perform interactions (players, AI).
-- `GetInteractionComponent() → UInteractionComponent*`
-
-**IDamageable** (`ICGFDamageableInterface`) — Implemented by a combat component on anything that can take damage. Found via `UCGFCombatStatics::FindDamageable(Actor)` (actor first, then components). Damage application is NOT in the contract — it belongs to the plugin owning the attribute model (VoxelCharacterPlugin today).
-- `GetFactionTag() → FGameplayTag` (empty = not a combatant)
-- `IsDead() → bool`
-- `IsImmuneToDamage(FCGFDamageContext) → bool` (per-hit veto, default false)
-
-**ILightBearer** (`ICGFLightBearerInterface`) — Implemented by actors that can carry a light (the character; its equipment manager reads a `UItemFragment_LightSource` and burns the item's durability as fuel). `GetCarriedLightLevel()` (0 = dark, ~1 = torch, every machine) and `ConsumeCarriedLightFuel(Seconds)` (authority). Consumers: dungeon sconces that need a flame to be lit, NPC perception (lit bearers are noticed from farther). Generated defaults = dark. Tag `Item.Category.Light` marks light-source items.
-
-**IItemStorage blobs** (`ICGFItemStorageInterface::SaveBlob / LoadBlob / DeleteBlob / HasBlob(Key)`) — opaque JSON documents next to the inventory calls, so a world save (feature 9, `VoxelWorldSave`) rides whichever backend the item system is configured with (local files, remote). Generated defaults do nothing / return false.
-
-**IRestPoint** (`ICGFRestPointInterface`) — Implemented by campsites (VoxelWorldPOI): `Rest(User)` / `SleepUntilMorning(User)` (authority, false when refused), `CanSleepNow()`, `GetCraftingStationTag()` (a `Crafting.Station.*` tag, empty = no crafting). The character's campsite UI calls these through server RPCs; the rest point decides what resting means. Tag `Crafting.Station.Campfire` is the first station; recipes with no station craft by hand.
-
-Hostility rule lives in `UCGFCombatStatics::AreHostileFactions` and nowhere else, so a relationship table can replace it later.
+1. **No gameplay logic.** Types and contracts only. Damage application, for instance, is not in
+   `ICGFDamageableInterface`: it belongs to the plugin that owns the attribute model (VoxelCharacterPlugin).
+2. **No dependencies on other game framework plugins.** A type both sides need moves here. Where a contract must name a
+   downstream class it uses a base type instead (`ICGFInventoryInterface` returns `UActorComponent*`;
+   `FInventorySlotArray` holds its owner as `UActorComponent*` and binds `TFunction` callbacks).
+3. **Every type serializes** for both the network and storage (`NetSerialize`, and `SerializeFragment` /
+   `DeserializeFragment` on instance fragments).
+4. **Interface functions are `BlueprintNativeEvent`**, called through `Execute_*`.
+5. **Changes here affect every plugin.** Add a type only when it is shared.
+6. **`FItemInstance` rules:** GUIDs are made on the server only (`UItemDatabaseSubsystem::CreateItemInstance`);
+   `InstanceId` is the key for every operation, never an array index; `StackCount` is at least 1 for a valid instance;
+   instance fragments are the one place UObjects carry per-item data.
+7. **Definition fragments vs instance fragments:** the definition fragment base (`UItemDefinitionFragment`) lives in
+   ItemInventoryPlugin, which owns item data assets; the instance fragment base (`UItemInstanceFragment`) lives here
+   because every plugin carries `FItemInstance`.
+8. **Tags:** shared roots are declared here (`COMMON_TYPES.md` lists them); plugins and games add children. New
+   interaction kinds, slots and categories are new tags, never new enum values.
+9. **The hostility rule** lives in `UCGFCombatStatics::AreHostileFactions` and nowhere else.
+10. **Lasting stats go through a source-defined effect class** (`UCGFGameplayEffectStatics::ApplyStatModifierEffect`,
+    `SetByCaller.Stat.<Name>`): a transient infinite effect does not replicate to the owning client.
 
 ## Build.cs Dependencies
 
 ```csharp
-PublicDependencyModuleNames.AddRange(new string[]
-{
-    "Core",
-    "CoreUObject",
-    "Engine",
-    "GameplayTags",
-    "GameplayAbilities",   // For GAS types in interfaces
-    "GameplayTasks",
-    "NetCore",             // For FFastArraySerializer
-});
+PublicDependencyModuleNames: Core, CoreUObject, Engine, GameplayTags,
+                             GameplayAbilities (GAS types in interfaces and the effect statics), NetCore (FFastArraySerializer)
 ```
 
-GAS modules are included here because the interfaces reference GAS types. This does NOT mean CommonGameFramework implements GAS logic — it only uses the types for interface declarations.
+## Logging and Tests
 
-## Rules for This Module
-
-1. **No gameplay logic.** This module defines types and contracts, not behavior.
-2. **No dependencies on other game framework plugins.** If you find yourself needing to #include from ItemInventoryPlugin or EquipmentPlugin, the type belongs here instead.
-3. **Every type must be fully serializable** — both for SaveGame and for network replication.
-4. **Every interface function must have a Blueprint-callable wrapper** where the UInterface pattern requires it.
-5. **Changes here affect all plugins.** Be conservative. Add types only when they genuinely need to be shared.
-
-## Implementation Phase
-
-This module is **Phase 1**. It must be fully implemented and compiling before any other plugin work begins. Implementation order within this module:
-
-1. Module setup (Build.cs, .uplugin, module class)
-2. Common enums and basic types (CGFCommonEnums.h, simple structs)
-3. FItemInstance and related structs (CGFItemTypes.h)
-4. Interaction types (CGFInteractionTypes.h)
-5. Equipment types (CGFEquipmentTypes.h)
-6. Loot types (CGFLootTypes.h)
-7. Gameplay tag declarations (CGFGameplayTags.h/.cpp)
-8. All interfaces
-9. Utility functions
+- Log category `LogCGF` (`CommonGameFramework.h`).
+- The module has no tests of its own; its types are exercised by ItemInventoryPlugin's `ItemInventory.Types.*` tests and
+  the other plugins' suites. `CGFTesting::FTestGameInstance` gives those tests a game instance and world.

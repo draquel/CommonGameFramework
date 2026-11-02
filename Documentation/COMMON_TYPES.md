@@ -1,8 +1,12 @@
 # CommonGameFramework — Shared Types Reference
 
+> State as of 2026-11-02 (code review CR5).
+
 ## Overview
 
-This document is the definitive reference for every type, interface, and gameplay tag defined in CommonGameFramework. All other plugins depend on these definitions. Changes here ripple across the entire plugin suite — modify conservatively.
+The reference for every type, interface, delegate and gameplay tag CommonGameFramework defines. The other framework
+plugins and the game layer build on them, so a change here ripples across the suite: change conservatively. Headers are
+under `Source/CommonGameFramework/Public/` (`Types/`, `Interfaces/`, `Tags/`, `Utilities/`, `Testing/`).
 
 ---
 
@@ -10,7 +14,7 @@ This document is the definitive reference for every type, interface, and gamepla
 
 ### FItemInstance
 
-The runtime representation of a single item (or item stack). This is the most referenced type in the system.
+`Types/CGFItemTypes.h`. The runtime representation of one item or one stack.
 
 ```cpp
 USTRUCT(BlueprintType)
@@ -22,30 +26,34 @@ struct COMMONGAMEFRAMEWORK_API FItemInstance
     FGuid InstanceId;                    // Globally unique, server-generated
 
     UPROPERTY(BlueprintReadOnly)
-    FPrimaryAssetId ItemDefinitionId;    // Points to UItemDefinition asset
+    FPrimaryAssetId ItemDefinitionId;    // The UItemDefinition asset (ItemInventoryPlugin)
 
     UPROPERTY(BlueprintReadOnly)
-    int32 StackCount = 1;               // >= 1 for valid instances
+    int32 StackCount = 1;                // >= 1 for valid instances
 
     UPROPERTY(BlueprintReadOnly, Instanced)
     TArray<TObjectPtr<UItemInstanceFragment>> InstanceFragments;  // Mutable per-instance data
 
-    bool IsValid() const;
+    bool IsValid() const;                // a GUID, a definition id and StackCount >= 1
+    bool operator==(const FItemInstance& Other) const;   // equal when InstanceId matches
+    bool operator!=(const FItemInstance& Other) const;
     bool NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& bOutSuccess);
+
+    template<typename T> T* FindFragment() const;        // first instance fragment of type T
 };
 ```
 
 **Lifecycle rules:**
-- Created only on the server via `UItemDatabaseSubsystem::CreateItemInstance()`
-- Identified across the network by `InstanceId` (never by array index)
-- `StackCount = 0` means the instance should be removed — no code should hold a reference to it after this point
-- `ItemDefinitionId` is loaded on-demand; game code should go through `UItemDatabaseSubsystem` to resolve it, never load it directly
-- `InstanceFragments` are owned UObjects instanced per-item; they're the one place UObjects are used for per-item data
+- Created only on the server, through `UItemDatabaseSubsystem::CreateItemInstance()` (ItemInventoryPlugin)
+- Identified across the network by `InstanceId`, never by array index
+- `StackCount = 0` means the instance should be removed; nothing may hold it after that
+- Resolve `ItemDefinitionId` through `UItemDatabaseSubsystem`; never load the asset directly
+- `InstanceFragments` are owned, instanced UObjects: the one place UObjects carry per-item data
 
 **Serialization:**
-- Network: Custom `NetSerialize` via `TStructOpsTypeTraits` (WithNetSerializer)
-- Storage: JSON-serializable via `FJsonObjectConverter`; each fragment serializes its own data
-- Equality: Two instances are equal if `InstanceId` matches (WithIdenticalViaEquality)
+- Network: custom `NetSerialize` (`TStructOpsTypeTraits`: `WithNetSerializer`, `WithIdenticalViaEquality`)
+- Storage: ItemInventoryPlugin's `FItemSerializationUtils` writes the JSON; each fragment writes its own data through
+  `SerializeFragment`
 
 ### UItemInstanceFragment (Base Class)
 
@@ -55,30 +63,27 @@ class COMMONGAMEFRAMEWORK_API UItemInstanceFragment : public UObject
 {
     GENERATED_BODY()
 public:
-    // Override to provide JSON-serializable data for persistence
-    virtual TSharedPtr<FJsonObject> SerializeFragment() const;
+    virtual TSharedPtr<FJsonObject> SerializeFragment() const;           // persistence
     virtual void DeserializeFragment(const TSharedPtr<FJsonObject>& Data);
 
-    // Override to provide display data for UI
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Item|Fragment")
-    FText GetFragmentDisplayText() const;
+    FText GetFragmentDisplayText() const;                                 // UI text
 
-    // Network serialization support
     virtual bool NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& bOutSuccess);
-
-    // Called when this fragment is added to an item instance
     virtual void OnAttachedToInstance(const FItemInstance& OwningInstance);
 };
 ```
 
 **Rules:**
-- Always `EditInlineNew` + `DefaultToInstanced` so they can be edited inline on item definitions and created as instanced subobjects
-- Subclasses define their own `UPROPERTY` fields for mutable state
-- Must implement `SerializeFragment`/`DeserializeFragment` for persistence to work
-- Must implement `NetSerialize` for replication to work
-- Lives in CommonGameFramework (not ItemInventoryPlugin) because both Equipment and Item plugins need to work with instance fragments
+- `EditInlineNew` + `DefaultToInstanced`, so they are edited inline on item definitions and created as instanced subobjects
+- Subclasses declare their own `UPROPERTY` fields for mutable state and implement `SerializeFragment` /
+  `DeserializeFragment` for persistence and `NetSerialize` for replication
+- The base lives here (not in ItemInventoryPlugin) so that every plugin can carry `FItemInstance`; the subclasses
+  (`UInstanceFragment_DurabilityState`, `UInstanceFragment_CustomDataMap`) live in ItemInventoryPlugin
 
-### FInventorySlot
+### FInventorySlot and FInventorySlotArray
+
+`Types/CGFItemTypes.h`. One inventory slot, and the `FFastArraySerializer` that replicates the slot array.
 
 ```cpp
 USTRUCT(BlueprintType)
@@ -93,25 +98,42 @@ struct COMMONGAMEFRAMEWORK_API FInventorySlot : public FFastArraySerializerItem
     int32 SlotIndex = -1;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
-    FGameplayTagContainer SlotTags;    // Optional filtering (e.g., hotbar, ammo)
+    FGameplayTagContainer SlotTags;    // carried; no code reads it today
 
     UPROPERTY(BlueprintReadOnly)
     bool bIsOccupied = false;
 
-    // FFastArraySerializerItem callbacks
-    void PreReplicatedRemove(const struct FInventorySlotArray& ArraySerializer);
-    void PostReplicatedAdd(const struct FInventorySlotArray& ArraySerializer);
-    void PostReplicatedChange(const struct FInventorySlotArray& ArraySerializer);
+    void PreReplicatedRemove(const FInventorySlotArray& ArraySerializer);
+    void PostReplicatedAdd(const FInventorySlotArray& ArraySerializer);
+    void PostReplicatedChange(const FInventorySlotArray& ArraySerializer);
+};
+
+USTRUCT(BlueprintType)
+struct COMMONGAMEFRAMEWORK_API FInventorySlotArray : public FFastArraySerializer
+{
+    GENERATED_BODY()
+
+    UPROPERTY()
+    TArray<FInventorySlot> Items;
+
+    UActorComponent* OwningComponent = nullptr;     // the UInventoryComponent (not nameable here)
+
+    // Bound by the owning component so its delegates fire on clients
+    TFunction<void(const FInventorySlot&)> OnSlotAddedCallback;
+    TFunction<void(const FInventorySlot&)> OnSlotRemovedCallback;
+    TFunction<void(const FInventorySlot&)> OnSlotChangedCallback;
+
+    bool NetDeltaSerialize(FNetDeltaSerializeInfo& DeltaParms);  // WithNetDeltaSerializer
 };
 ```
 
 **Rules:**
-- Inherits `FFastArraySerializerItem` for per-element replication
-- `SlotIndex` is stable — never changes after initialization
-- Removing an item sets `bIsOccupied = false` and clears `Item`; slot remains in the array
-- `SlotTags` are set at configuration time (editor or BeginPlay), not at runtime
+- `SlotIndex` is stable: it never changes after the component allocates its slots
+- Removing an item sets `bIsOccupied = false` and clears `Item`; the slot stays in the array
 
 ### FInteractionOption
+
+`Types/CGFInteractionTypes.h`.
 
 ```cpp
 USTRUCT(BlueprintType)
@@ -123,16 +145,16 @@ struct COMMONGAMEFRAMEWORK_API FInteractionOption
     FGameplayTag InteractionType;      // Interaction.Type.Pickup, etc.
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
-    FText DisplayText;                 // "Pick Up", "Open", "Talk"
+    FText DisplayText;                 // "Pick Up", "Open", "Search"
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
-    int32 Priority = 0;               // Higher = shown first in UI
+    int32 Priority = 0;                // Higher = shown first
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     bool bRequiresHold = false;        // True = channeled interaction
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "bRequiresHold"))
-    float HoldDuration = 0.0f;        // Seconds to hold
+    float HoldDuration = 0.0f;         // Seconds to hold
 };
 ```
 
@@ -154,14 +176,16 @@ struct COMMONGAMEFRAMEWORK_API FInteractionContext
     FGameplayTag InteractionType;                // Which interaction
 
     UPROPERTY(BlueprintReadOnly)
-    FVector InteractionLocation;                 // World location of interaction
+    FVector InteractionLocation = FVector::ZeroVector;
 
     UPROPERTY(BlueprintReadOnly)
-    float Distance;                              // Distance between actors
+    float Distance = 0.0f;                       // Between the two actors
 };
 ```
 
 ### FEquipmentSlotDefinition
+
+`Types/CGFEquipmentTypes.h`. Configuration of one equipment slot, set on `UEquipmentManagerComponent::AvailableSlots`.
 
 ```cpp
 USTRUCT(BlueprintType)
@@ -170,20 +194,25 @@ struct COMMONGAMEFRAMEWORK_API FEquipmentSlotDefinition
     GENERATED_BODY()
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
-    FGameplayTag SlotTag;              // Equipment.Slot.Head, etc.
+    FGameplayTag SlotTag;                        // Equipment.Slot.Head, etc.
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
-    FGameplayTagContainer AcceptedItemTags;  // Tag filter for this slot
+    FGameplayTagContainer AcceptedItemTags;      // The item needs any of these (empty = any)
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     FText SlotDisplayName;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
-    FName AttachSocket;                // Skeletal mesh socket for visual attachment
+    FName AttachSocket;                          // Skeletal mesh socket for the visual
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FTransform AttachOffset = FTransform::Identity;  // The slot's skeleton correction for the visual
 };
 ```
 
-### FLootContext
+### FLootContext and FLootResult
+
+`Types/CGFLootTypes.h`.
 
 ```cpp
 USTRUCT(BlueprintType)
@@ -192,25 +221,38 @@ struct COMMONGAMEFRAMEWORK_API FLootContext
     GENERATED_BODY()
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    int32 Level = 1;                   // Player/enemy level for level-gated drops
+    int32 Level = 1;                   // Against an entry's MinLevel / MaxLevel
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    FGameplayTagContainer ContextTags; // Situational tags: biome, difficulty, etc.
+    FGameplayTagContainer ContextTags; // Loot.Source.*, biome, difficulty
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    int32 PartySize = 1;              // For party-scaled drops
+    int32 PartySize = 1;               // carried; the loot subsystem does not read it
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    float LuckModifier = 1.0f;        // Multiplier on rare drop chances
+    float LuckModifier = 1.0f;         // carried; the loot subsystem does not read it
 
     UPROPERTY(BlueprintReadOnly)
-    FRandomStream RandomStream;        // Seeded RNG for deterministic testing
+    FRandomStream RandomStream;        // Used when its initial seed is non-zero (deterministic rolls)
+};
+
+USTRUCT(BlueprintType)
+struct COMMONGAMEFRAMEWORK_API FLootResult
+{
+    GENERATED_BODY()
+
+    UPROPERTY(BlueprintReadOnly)
+    TArray<FItemInstance> Items;
+
+    UPROPERTY(BlueprintReadOnly)
+    bool bSuccess = false;
 };
 ```
 
 ### FCGFDamageContext
 
-Declared in `CGFCombatTypes.h`. Built by whatever causes a hit (ability, trap, projectile, debug command) and handed to the target's damageable. Carries no logic — the receiving plugin maps it onto its own attribute/mitigation model.
+`Types/CGFCombatTypes.h`. Built by whatever causes a hit (ability, trap, projectile, debug command) and handed to the
+target's damageable. It carries no logic: the receiving plugin maps it onto its own attribute and mitigation model.
 
 ```cpp
 USTRUCT(BlueprintType)
@@ -219,13 +261,13 @@ struct COMMONGAMEFRAMEWORK_API FCGFDamageContext
     GENERATED_BODY()
 
     TWeakObjectPtr<AActor> InstigatorActor;  // Responsible actor (pawn); null for hazards
-    TWeakObjectPtr<AActor> CauserActor;      // Weapon / trap / projectile; may equal instigator
+    TWeakObjectPtr<AActor> CauserActor;      // Weapon / trap / projectile; may equal the instigator
     FGameplayTag DamageType;                 // Damage.Type.*; empty = Physical
     float BaseDamage = 0.f;                  // Before receiver-side modifiers
     FVector HitLocation, HitNormal;          // Impact, if known
     FGuid SourceItemInstanceId;              // The FItemInstance behind the hit, if any
     bool bIgnoreFaction = false;             // Hazards: skip the hostility check
-    FGameplayTagContainer ContextTags;       // Free-form (Damage.Source.Trap, Damage.Critical, ...)
+    FGameplayTagContainer ContextTags;       // Free-form (Damage.Critical, ...)
 
     bool HasDamage() const;                  // BaseDamage > 0 and finite
 };
@@ -233,7 +275,8 @@ struct COMMONGAMEFRAMEWORK_API FCGFDamageContext
 
 ### FCGFAttributeModifier
 
-Declared in `CGFCombatTypes.h`. One additive attribute change ("+3 Defense"), authored on item fragments (equipment stats, consumable effects) and applied by `UCGFGameplayEffectStatics` without any gameplay-effect asset.
+`Types/CGFCombatTypes.h`. One additive attribute change ("+3 Defense"), authored on item fragments (equipment stats,
+consumable effects) and applied by `UCGFGameplayEffectStatics` without a gameplay-effect asset.
 
 ```cpp
 USTRUCT(BlueprintType)
@@ -250,7 +293,8 @@ struct COMMONGAMEFRAMEWORK_API FCGFAttributeModifier
 
 ## Enums
 
-Rarity is the `Item.Rarity.*` gameplay tag alone (the `EItemRarity` enum was named by nothing and was deleted in CR1, FW-11).
+`Types/CGFCommonEnums.h` and, for damage, `Types/CGFCombatTypes.h`. Rarity is the `Item.Rarity.*` gameplay tag alone
+(the `EItemRarity` enum was named by nothing and was deleted in CR1, FW-11).
 
 ### EInventoryOperationResult
 ```
@@ -274,157 +318,121 @@ NoInventorySpace (for unequip-to-inventory), NotAuthorized
 Applied, Rejected_NoTarget, Rejected_NotAuthority, Rejected_Dead, Rejected_Invulnerable,
 Rejected_Friendly, Rejected_NoAbilitySystem, Rejected_ByTarget
 ```
-Outcome of a damage application request. Every rejection has its own value so callers can log or react without re-deriving the reason.
+The outcome of a damage request; each rejection has its own value so callers can log or react without re-deriving it.
 
 ---
 
 ## Interfaces
 
-### IInteractable
+All eight are `UINTERFACE(MinimalAPI, BlueprintType)` with `BlueprintNativeEvent` functions (call them through
+`Execute_*`). Who implements and calls each is in `ARCHITECTURE.md` §4.1.
 
-Implemented by: `UInteractableComponent`, `AWorldItem`, any custom interactable actor.
-
-```cpp
-UINTERFACE(MinimalAPI, BlueprintType)
-class UCGFInteractableInterface : public UInterface { GENERATED_BODY() };
-
-class COMMONGAMEFRAMEWORK_API ICGFInteractableInterface
-{
-    GENERATED_BODY()
-public:
-    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Interaction")
-    bool CanInteract(AActor* Interactor, const FInteractionContext& Context) const;
-
-    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Interaction")
-    TArray<FInteractionOption> GetInteractionOptions(AActor* Interactor) const;
-
-    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Interaction")
-    EInteractionResult Interact(AActor* Interactor, FGameplayTag InteractionType);
-};
-```
-
-### IInventoryOwner
-
-Implemented by: Any actor with `UInventoryComponent` (players, NPCs, containers).
+### ICGFInteractableInterface
 
 ```cpp
-UINTERFACE(MinimalAPI, BlueprintType)
-class UCGFInventoryInterface : public UInterface { GENERATED_BODY() };
-
-class COMMONGAMEFRAMEWORK_API ICGFInventoryInterface
-{
-    GENERATED_BODY()
-public:
-    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Inventory")
-    UInventoryComponent* GetInventoryComponent() const;
-
-    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Inventory")
-    TArray<UInventoryComponent*> GetInventoryComponents() const;
-};
+bool CanInteract(AActor* Interactor, const FInteractionContext& Context) const;
+TArray<FInteractionOption> GetInteractionOptions(AActor* Interactor) const;
+EInteractionResult Interact(AActor* Interactor, FGameplayTag InteractionType);
 ```
 
-**Note**: `UInventoryComponent*` is forward-declared here. The actual class lives in ItemInventoryPlugin. This is acceptable because the interface only returns a pointer — CommonGameFramework never calls methods on it. Consumers that call methods on the returned pointer already depend on ItemInventoryPlugin.
+Declared for interactables; nothing in the project implements it. InteractionPlugin's flow finds the target's
+`UInteractableComponent` (which has the same three functions) with `FindComponentByClass`.
 
-### IEquippable
-
-Queried against item data to determine equipment behavior. Typically implemented by `UItemFragment_Equipment`.
+### ICGFInventoryInterface
 
 ```cpp
-UINTERFACE(MinimalAPI, BlueprintType)
-class UCGFEquippableInterface : public UInterface { GENERATED_BODY() };
-
-class COMMONGAMEFRAMEWORK_API ICGFEquippableInterface
-{
-    GENERATED_BODY()
-public:
-    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Equipment")
-    FGameplayTag GetEquipmentSlot() const;
-
-    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Equipment")
-    TArray<TSubclassOf<UGameplayAbility>> GetGrantedAbilities() const;
-
-    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Equipment")
-    TArray<TSubclassOf<UGameplayEffect>> GetAppliedEffects() const;
-};
+UActorComponent* GetInventoryComponent() const;             // the UInventoryComponent
+TArray<UActorComponent*> GetInventoryComponents() const;    // actors with several inventories
 ```
 
-### IItemStorage
+Returns `UActorComponent*` because `UInventoryComponent` lives in ItemInventoryPlugin; callers cast. Implemented by the
+player character (`AVCCharacterBase`).
 
-Persistence abstraction. Implemented by: `ULocalItemStorage`, `URemoteItemStorage`, any custom backend.
+### ICGFEquippableInterface
 
 ```cpp
-UINTERFACE(MinimalAPI, BlueprintType)
-class UCGFItemStorageInterface : public UInterface { GENERATED_BODY() };
-
-class COMMONGAMEFRAMEWORK_API ICGFItemStorageInterface
-{
-    GENERATED_BODY()
-public:
-    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Storage")
-    bool SaveInventory(const FString& OwnerId, const TArray<FItemInstance>& Items);
-
-    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Storage")
-    TArray<FItemInstance> LoadInventory(const FString& OwnerId);
-
-    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Storage")
-    bool DeleteInventory(const FString& OwnerId);
-
-    // Async variants use delegate callbacks
-    virtual void SaveInventoryAsync(const FString& OwnerId, const TArray<FItemInstance>& Items,
-        const FOnStorageComplete& Callback) = 0;
-
-    virtual void LoadInventoryAsync(const FString& OwnerId,
-        const FOnStorageLoadComplete& Callback) = 0;
-};
+FGameplayTag GetEquipmentSlot() const;
+TArray<TSubclassOf<UGameplayAbility>> GetGrantedAbilities() const;
+TArray<TSubclassOf<UGameplayEffect>> GetAppliedEffects() const;
 ```
 
-### IInteractionSource
+Declared; nothing implements it. EquipmentPlugin reads `UItemFragment_Equipment` from the item definition instead.
 
-Implemented by: Any actor that performs interactions (player characters, AI pawns).
+### ICGFItemStorageInterface
+
+Persistence abstraction. Implemented by `ULocalItemStorage` and `URemoteItemStorage` (ItemInventoryPlugin).
 
 ```cpp
-UINTERFACE(MinimalAPI, BlueprintType)
-class UCGFInteractionSourceInterface : public UInterface { GENERATED_BODY() };
+bool SaveInventory(const FString& OwnerId, const TArray<FItemInstance>& Items);
+TArray<FItemInstance> LoadInventory(const FString& OwnerId);
+bool DeleteInventory(const FString& OwnerId);
 
-class COMMONGAMEFRAMEWORK_API ICGFInteractionSourceInterface
-{
-    GENERATED_BODY()
-public:
-    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Interaction")
-    UInteractionComponent* GetInteractionComponent() const;
-};
+// Opaque JSON documents next to the inventories (the world save, VoxelWorldSave)
+bool SaveBlob(const FString& Key, const FString& Json);
+bool LoadBlob(const FString& Key, FString& OutJson);
+bool DeleteBlob(const FString& Key);
+bool HasBlob(const FString& Key);
+
+// C++ only, default bodies do nothing
+virtual void SaveInventoryAsync(const FString& OwnerId, const TArray<FItemInstance>& Items,
+    const FOnStorageComplete& Callback);
+virtual void LoadInventoryAsync(const FString& OwnerId, const FOnStorageLoadComplete& Callback);
 ```
 
-### ICGFDamageable
+Generated defaults of the blob functions do nothing and return false.
 
-Implemented by: anything that can be damaged and belongs to a faction — usually a combat component on a pawn (same pattern as `IInteractable` on `UInteractableComponent`). Locate it with `UCGFCombatStatics::FindDamageable`. Damage application is **not** part of the contract; it lives with the implementer's attribute model.
+### ICGFInteractionSourceInterface
 
 ```cpp
-UINTERFACE(MinimalAPI, BlueprintType)
-class UCGFDamageableInterface : public UInterface { GENERATED_BODY() };
-
-class COMMONGAMEFRAMEWORK_API ICGFDamageableInterface
-{
-    GENERATED_BODY()
-public:
-    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Combat")
-    FGameplayTag GetFactionTag() const;          // Faction.*; empty = not a combatant
-
-    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Combat")
-    bool IsDead() const;
-
-    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Combat")
-    bool IsImmuneToDamage(const FCGFDamageContext& Context) const;   // Per-hit veto; default false
-};
+UActorComponent* GetInteractionComponent() const;
 ```
 
-Generated defaults are empty faction / not dead / not immune — implementers override all three.
+Declared for actors that perform interactions; nothing implements it.
+
+### ICGFDamageableInterface
+
+Implemented by anything that can be damaged and belongs to a faction, usually a combat component on a pawn
+(VoxelCharacterPlugin's `UVCCombatComponent`). Find it with `UCGFCombatStatics::FindDamageable`. Damage application is
+not part of the contract: it lives with the implementer's attribute model.
+
+```cpp
+FGameplayTag GetFactionTag() const;                          // Faction.*; empty = not a combatant
+bool IsDead() const;
+bool IsImmuneToDamage(const FCGFDamageContext& Context) const;   // Per-hit veto; default false
+```
+
+Generated defaults are empty faction, not dead, not immune.
+
+### ICGFLightBearerInterface
+
+```cpp
+float GetCarriedLightLevel() const;          // 0 = dark, about 1 = a torch; every machine
+bool ConsumeCarriedLightFuel(float Seconds); // authority
+```
+
+Implemented by actors that can carry a light (the player character, through its equipment manager's
+`UItemFragment_LightSource` item, whose durability is the fuel). Read by dungeon sconces that need a flame and by NPC AI.
+Generated defaults are dark. `Item.Category.Light` marks light-source items.
+
+### ICGFRestPointInterface
+
+```cpp
+bool Rest(AActor* User);                     // authority; false when refused
+bool SleepUntilMorning(AActor* User);        // authority; false when refused
+bool CanSleepNow() const;
+FGameplayTag GetCraftingStationTag() const;  // a Crafting.Station.* tag; empty = no crafting
+virtual FSimpleMulticastDelegate* GetSleepAvailabilityChangedEvent();   // C++ only, may be null
+```
+
+Implemented by VoxelWorldPOI's campsites. The character's campsite UI calls it through server RPCs; the rest point
+decides what resting means. `Crafting.Station.Campfire` is the first station; recipes with no station craft by hand.
 
 ---
 
 ## Gameplay Tags
 
-All tags below are declared as native gameplay tags in `CGFGameplayTags.h` using `UE_DEFINE_GAMEPLAY_TAG_COMMENT`.
+Declared in `Tags/CGFGameplayTags.h` (`UE_DECLARE_GAMEPLAY_TAG_EXTERN`, namespace `CGFGameplayTags`) and defined in
+`Private/Tags/CGFGameplayTags.cpp` (`UE_DEFINE_GAMEPLAY_TAG_COMMENT`).
 
 ### Item Tags
 ```
@@ -432,24 +440,18 @@ Item.Category.Weapon          — Weapons (swords, bows, staves)
 Item.Category.Armor           — Armor pieces
 Item.Category.Consumable      — Potions, food, scrolls
 Item.Category.Material        — Crafting materials, resources
-Item.Category.Quest           — Quest items (often non-droppable)
+Item.Category.Quest           — Quest items
 Item.Category.Misc            — Everything else
+Item.Category.Light           — Carried light sources (torches)
 
-Item.Rarity.Common
-Item.Rarity.Uncommon
-Item.Rarity.Rare
-Item.Rarity.Epic
-Item.Rarity.Legendary
+Item.Rarity.Common / Uncommon / Rare / Epic / Legendary
 
 Item.Key.DungeonBoss          — Key identity: opens a dungeon boss-room door (keys are items with a Key fragment)
 ```
 
 ### Inventory Tags
 ```
-Inventory.Type.Player         — Player's personal inventory
-Inventory.Type.Container      — World containers (chests, barrels)
-Inventory.Type.NPC            — NPC inventories (vendors, enemies)
-Inventory.Type.Loot           — Temporary loot drop inventories
+Inventory.Type.Player / Container / NPC / Loot   — carried on UInventoryComponent::InventoryTypeTag; not read by code
 ```
 
 ### Equipment Tags
@@ -463,18 +465,25 @@ Equipment.Slot.MainHand
 Equipment.Slot.OffHand
 Equipment.Slot.Accessory1
 Equipment.Slot.Accessory2
+
+An equipment fragment naming the parent Equipment.Slot.Accessory goes to the first empty child slot.
 ```
 
 ### Interaction Tags
 ```
 Interaction.Type.Pickup       — Pick up an item
 Interaction.Type.Drop         — Drop an item
-Interaction.Type.Use          — Use/activate (context-dependent)
+Interaction.Type.Use          — Use / activate (context-dependent)
 Interaction.Type.Open         — Open a container, door, etc.
-Interaction.Type.Equip        — Equip an item directly from world
-Interaction.Type.Inspect      — Examine/read without taking
+Interaction.Type.Equip        — Equip an item directly from the world
+Interaction.Type.Inspect      — Examine without taking
 Interaction.Type.Search       — Search a container for loot
 Interaction.Type.Unlock       — Unlock a lock with a key
+```
+
+### Crafting Tags
+```
+Crafting.Station.Campfire     — The campsite's station; UCraftingRecipe::RequiredStationTag
 ```
 
 ### Loot Tags
@@ -483,6 +492,7 @@ Loot.Source.DungeonTreasure   — Roll context: a dungeon treasure-room chest
 Loot.Source.DungeonContainer  — Roll context: a searchable dungeon crate / barrel
 Loot.Source.DungeonBoss       — Roll context: a dungeon boss's death reward
 Loot.Source.DungeonEnemy      — Roll context: a regular dungeon enemy's drop
+Loot.Source.SurfaceNPC        — Roll context: surface wildlife (deer, wolves)
 ```
 
 ### Combat Tags
@@ -490,7 +500,8 @@ Loot.Source.DungeonEnemy      — Roll context: a regular dungeon enemy's drop
 Faction.Player                — Player characters
 Faction.Monster               — Hostile creatures and dungeon enemies
 Faction.Neutral               — Never hostile to anyone
-Faction.Object                — Breakable props: a valid target for anyone (Neutral included), never an attacker
+Faction.Object                — Breakable props: a valid target for anyone, never an attacker
+Faction.Animal                — Wildlife: hunted by Player and Monster; animals never fight each other
 
 Damage.Type.Physical          — Mitigated by defense
 Damage.Type.Fire
@@ -507,7 +518,7 @@ Event.Combat.Downed
 Event.Combat.Died
 Event.Objective.Completed     — Sent to the completing player's ASC when an objective is cleared
 
-Objective.Kind.BossKill       — Objective kind: defeat the room's boss (dungeon objectives, feature 4)
+Objective.Kind.BossKill       — Objective kind: defeat the room's boss (dungeon objectives)
 
 Ability.Attack.Melee          — Ability identity for TryActivateAbilitiesByTag
 SetByCaller.Damage            — Magnitude key on damage effect specs
@@ -516,101 +527,85 @@ SetByCaller.Stat              — Root of SetByCaller.Stat.<AttributeName> keys 
 
 ### Extending Tags
 
-Plugins and game code can add child tags under any of these roots. For example:
-- `Item.Category.Weapon.Melee.Sword` (game-specific)
-- `Interaction.Type.Hack` (game-specific)
-- `Equipment.Slot.Mount` (game-specific)
+Plugins and game code add child tags under any of these roots, for example:
 
-New root-level tag namespaces should only be added to CommonGameFramework when they represent a concept shared across multiple plugins.
+```
+Item.Category.Weapon.Melee.Sword    (game-specific)
+Interaction.Type.Hack               (game-specific)
+Equipment.Slot.Mount                (game-specific)
+```
+
+A new root namespace belongs in CommonGameFramework only when several plugins share the concept.
 
 ---
 
-## Utility Functions (CGFStatics)
+## Utility Functions
+
+### UCGFStatics
+
+`Utilities/CGFStatics.h`, a Blueprint function library.
 
 ```cpp
-UCLASS()
-class COMMONGAMEFRAMEWORK_API UCGFStatics : public UBlueprintFunctionLibrary
-{
-    GENERATED_BODY()
-public:
-    // Item helpers
-    UFUNCTION(BlueprintCallable, Category = "CGF|Item")
-    static bool IsItemInstanceValid(const FItemInstance& Instance);
-
-    UFUNCTION(BlueprintCallable, Category = "CGF|Item")
-    static FString GetItemInstanceDebugString(const FItemInstance& Instance);
-
-    // Tag helpers
-    UFUNCTION(BlueprintCallable, Category = "CGF|Tags")
-    static bool ItemMatchesTagFilter(const FGameplayTagContainer& ItemTags,
-        const FGameplayTagContainer& AllowedTags,
-        const FGameplayTagContainer& DeniedTags);
-
-    // GUID helpers
-    UFUNCTION(BlueprintCallable, BlueprintPure, Category = "CGF|Utility")
-    static FGuid GenerateNewGuid();
-
-    UFUNCTION(BlueprintCallable, BlueprintPure, Category = "CGF|Utility")
-    static bool IsGuidValid(const FGuid& Guid);
-};
+static bool IsItemInstanceValid(const FItemInstance& Instance);
+static FString GetItemInstanceDebugString(const FItemInstance& Instance);
+static bool ItemMatchesTagFilter(const FGameplayTagContainer& ItemTags,
+    const FGameplayTagContainer& AllowedTags, const FGameplayTagContainer& DeniedTags);
+static FGuid GenerateNewGuid();
+static bool IsGuidValid(const FGuid& Guid);
 ```
 
----
+### UCGFCombatStatics
 
-## Combat Helpers (CGFCombatStatics)
-
-Pure helpers over the combat contracts. No gameplay state and no damage application.
+`Utilities/CGFCombatStatics.h`. Pure helpers over the combat contracts; no state, no damage application.
 
 ```cpp
-UCLASS()
-class COMMONGAMEFRAMEWORK_API UCGFCombatStatics : public UBlueprintFunctionLibrary
-{
-    GENERATED_BODY()
-public:
-    // Actor itself first, then its components (C++ or Blueprint implementers)
-    static TScriptInterface<ICGFDamageableInterface> FindDamageable(AActor* Actor);
-    static FGameplayTag GetFactionTag(AActor* Actor);
-    static bool IsActorDead(AActor* Actor);
+// Actor itself first, then its components (C++ or Blueprint implementers)
+static TScriptInterface<ICGFDamageableInterface> FindDamageable(AActor* Actor);
+static FGameplayTag GetFactionTag(AActor* Actor);
+static bool IsActorDead(AActor* Actor);
 
-    // Hostility rule v1: either empty → false; either Neutral → false; same → false; else true.
-    // One function so a faction-relationship table can replace it without touching callers.
-    static bool AreHostileFactions(FGameplayTag FactionA, FGameplayTag FactionB);
-    static bool AreHostile(AActor* ActorA, AActor* ActorB);
-};
+// The hostility rule, in one place so a relationship table can replace it
+static bool AreHostileFactions(FGameplayTag FactionA, FGameplayTag FactionB);
+static bool AreHostile(AActor* ActorA, AActor* ActorB);
 ```
 
-Blueprint implementers leave the native interface pointer inside `TScriptInterface` null, so C++ callers go through `ICGFDamageableInterface::Execute_*` on `GetObject()`.
+Blueprint implementers leave the native interface pointer inside `TScriptInterface` null, so C++ callers go through
+`ICGFDamageableInterface::Execute_*` on `GetObject()`.
 
-## Gameplay Effect Helpers (CGFGameplayEffectStatics)
+### UCGFGameplayEffectStatics
 
-Applies `FCGFAttributeModifier` lists without effect assets. Server-only; callers check authority.
+`Utilities/CGFGameplayEffectStatics.h`. Applies `FCGFAttributeModifier` lists without effect assets. Server only; callers
+check authority.
 
 ```cpp
-UCLASS()
-class COMMONGAMEFRAMEWORK_API UCGFGameplayEffectStatics : public UBlueprintFunctionLibrary
-{
-    GENERATED_BODY()
-public:
-    // Build a modifier from an attribute set class + property name (scripts, data tools)
-    static FCGFAttributeModifier MakeAttributeModifier(TSubclassOf<UAttributeSet> AttributeSet, FName AttributeName, float Magnitude, bool& bOutValid);
-    static FGameplayTag MakeStatSetByCallerTag(const FGameplayAttribute& Attribute);   // SetByCaller.Stat.<Name>
+// Build a modifier from an attribute set class + property name (scripts, data tools)
+static FCGFAttributeModifier MakeAttributeModifier(TSubclassOf<UAttributeSet> AttributeSet, FName AttributeName,
+    float Magnitude, bool& bOutValid);
+static FGameplayTag MakeStatSetByCallerTag(const FGameplayAttribute& Attribute);   // SetByCaller.Stat.<Name>
 
-    // Instant: transient instant effect (never replicated as an active effect, so safe)
-    static bool ApplyInstantAttributeModifiers(UAbilitySystemComponent* ASC, const TArray<FCGFAttributeModifier>& Modifiers, UObject* SourceObject);
+// Instant: a transient instant effect (never kept as an active effect, so safe to replicate)
+static bool ApplyInstantAttributeModifiers(UAbilitySystemComponent* ASC, const TArray<FCGFAttributeModifier>& Modifiers,
+    UObject* SourceObject);
 
-    // Lasting: a source-defined class whose modifiers are SetByCaller keyed SetByCaller.Stat.<Name>;
-    // unrequested stats are set to 0. (A transient infinite effect would not replicate to the owning client.)
-    static FActiveGameplayEffectHandle ApplyStatModifierEffect(UAbilitySystemComponent* ASC, TSubclassOf<UGameplayEffect> EffectClass,
-        const TArray<FCGFAttributeModifier>& Modifiers, UObject* SourceObject);
-    static TArray<FGameplayAttribute> GetStatEffectAttributes(TSubclassOf<UGameplayEffect> EffectClass);
-};
+// Lasting: a source-defined class whose modifiers are SetByCaller keyed SetByCaller.Stat.<Name>;
+// unrequested stats are set to 0. (A transient infinite effect would not replicate to the owning client.)
+static FActiveGameplayEffectHandle ApplyStatModifierEffect(UAbilitySystemComponent* ASC,
+    TSubclassOf<UGameplayEffect> EffectClass, const TArray<FCGFAttributeModifier>& Modifiers, UObject* SourceObject);
+static TArray<FGameplayAttribute> GetStatEffectAttributes(TSubclassOf<UGameplayEffect> EffectClass);
 ```
+
+### CGFTesting::FTestGameInstance
+
+`Testing/CGFTestGameInstance.h`, compiled only with `WITH_AUTOMATION_TESTS`: a standalone game instance with a game world
+for the framework plugins' automation tests, so game-instance subsystems (the item database) and world subsystems (loot
+generation) exist. Play has not begun: a component's `BeginPlay` does not run.
 
 ---
 
 ## Delegate Signatures
 
-Declared in `CGFItemTypes.h` for cross-plugin use:
+Inventory, equipment and storage delegates are declared in `Types/CGFItemTypes.h`; interaction delegates in
+`Types/CGFInteractionTypes.h`.
 
 ```cpp
 // Inventory events
@@ -625,15 +620,15 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnItemEquipped, const FItemInstanc
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnItemUnequipped, const FItemInstance&, Item, FGameplayTag, SlotTag);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEquipmentChanged);
 
-// Interaction events
+// Storage callbacks
+DECLARE_DYNAMIC_DELEGATE_OneParam(FOnStorageComplete, bool, bSuccess);
+DECLARE_DYNAMIC_DELEGATE_TwoParams(FOnStorageLoadComplete, bool, bSuccess, const TArray<FItemInstance>&, Items);
+
+// Interaction events (CGFInteractionTypes.h)
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnInteractableFound, AActor*, InteractableActor);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnInteractableLost, AActor*, InteractableActor);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnInteractionStarted, const FInteractionContext&, Context);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnInteractionCompleted, const FInteractionContext&, Context, EInteractionResult, Result);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnInteractionFailed, const FInteractionContext&, Context, EInteractionResult, Result);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnChanneledInteractionProgress, float, Progress);
-
-// Storage callbacks
-DECLARE_DYNAMIC_DELEGATE_OneParam(FOnStorageComplete, bool, bSuccess);
-DECLARE_DYNAMIC_DELEGATE_TwoParams(FOnStorageLoadComplete, bool, bSuccess, const TArray<FItemInstance>&, Items);
 ```
