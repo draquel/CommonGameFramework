@@ -38,9 +38,14 @@ struct COMMONGAMEFRAMEWORK_API FItemInstance
     bool operator==(const FItemInstance& Other) const;   // equal when InstanceId matches
     bool operator!=(const FItemInstance& Other) const;
     bool Identical(const FItemInstance* Other, uint32 PortFlags) const;  // id, definition, count, fragment objects
+                                                                         // and the fragment revision
     bool NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& bOutSuccess);
 
-    template<typename T> T* FindFragment() const;        // first instance fragment of type T
+    template<typename T> const T* FindFragment() const;  // first instance fragment of type T, to read
+    template<typename T> T* EditFragment();              // the same, to change in place: bumps the fragment revision
+
+private:
+    uint32 FragmentRevision = 0;         // a count of fragment edits; compared by Identical, never sent or saved
 };
 ```
 
@@ -54,11 +59,20 @@ struct COMMONGAMEFRAMEWORK_API FItemInstance
 **Serialization:**
 - Network: custom `NetSerialize` (`TStructOpsTypeTraits`: `WithNetSerializer`, `WithIdentical`)
 - Two comparisons: `operator==` is identity (the same `InstanceId`), what game code finds an instance by; `Identical`
-  compares what `NetSerialize` sends (the id, the definition, `StackCount`, the fragment objects) and is what replication
-  compares a property with its last sent state through, so a count changed in place reaches the clients (G135). The
-  fragments are compared as objects, never read: a fragment's contents changed in place are not a change to it
+  compares what `NetSerialize` sends (the id, the definition, `StackCount`, the fragment objects) and the fragment
+  revision, and is what replication compares a property with its last sent state through, so a count changed in place
+  reaches the clients (G135) and so do a fragment's contents changed in place (G136)
+- The fragments are compared as objects, never read: replication's copy of the last sent state shares the live item's
+  fragment objects (a copy of an item is shallow) without keeping them alive, so nothing could see their contents change.
+  The revision is a plain number in the item, copied into that state by value: `EditFragment<T>()` bumps it, and
+  `FindFragment<T>()` returns a const fragment, so a change in place goes through `EditFragment` or does not compile
+- Change a fragment on the item where it is held: an inventory slot's own item, an equipment slot's. A copy of an item
+  shares its fragment objects with the original, so a change through a copy lands on both and marks only the copy; write
+  the copy back (`UInventoryComponent::TryReplaceItem` with its own id), or the change never replicates. A held item in
+  a fast array also needs its slot marked dirty, which the owning component's operations do
 - Storage: ItemInventoryPlugin's `FItemSerializationUtils` writes the JSON; each fragment writes its own data through
-  `SerializeFragment`
+  `SerializeFragment`. The revision is neither sent nor saved: a client's copy gets new fragment objects at every
+  receive, and a loaded item starts at 0
 
 ### UItemInstanceFragment (Base Class)
 
@@ -83,6 +97,8 @@ public:
 - `EditInlineNew` + `DefaultToInstanced`, so they are edited inline on item definitions and created as instanced subobjects
 - Subclasses declare their own `UPROPERTY` fields for mutable state and implement `SerializeFragment` /
   `DeserializeFragment` for persistence and `NetSerialize` for replication
+- Those fields are `EditAnywhere` (a definition's defaults) and `BlueprintReadOnly`: a held item's fragment changes in C++
+  through `FItemInstance::EditFragment`, which a Blueprint writing the field would bypass (G136)
 - The base lives here (not in ItemInventoryPlugin) so that every plugin can carry `FItemInstance`; the subclasses
   (`UInstanceFragment_DurabilityState`, `UInstanceFragment_CustomDataMap`) live in ItemInventoryPlugin
 

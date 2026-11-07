@@ -50,11 +50,13 @@ bool FItemInstance::operator!=(const FItemInstance& Other) const
 bool FItemInstance::Identical(const FItemInstance* Other, uint32 PortFlags) const
 {
 	// TObjectPtr's equality compares the handles: a fragment the shadow state still points at after GC is never read.
+	// The fragments' contents are seen through the revision instead (G136).
 	return Other
 		&& InstanceId == Other->InstanceId
 		&& ItemDefinitionId == Other->ItemDefinitionId
 		&& StackCount == Other->StackCount
-		&& InstanceFragments == Other->InstanceFragments;
+		&& InstanceFragments == Other->InstanceFragments
+		&& FragmentRevision == Other->FragmentRevision;
 }
 
 bool FItemInstance::NetSerialize(FArchive& Ar, UPackageMap* Map, bool& bOutSuccess)
