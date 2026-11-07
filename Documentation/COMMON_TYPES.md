@@ -37,6 +37,7 @@ struct COMMONGAMEFRAMEWORK_API FItemInstance
     bool IsValid() const;                // a GUID, a definition id and StackCount >= 1
     bool operator==(const FItemInstance& Other) const;   // equal when InstanceId matches
     bool operator!=(const FItemInstance& Other) const;
+    bool Identical(const FItemInstance* Other, uint32 PortFlags) const;  // id, definition, count, fragment objects
     bool NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& bOutSuccess);
 
     template<typename T> T* FindFragment() const;        // first instance fragment of type T
@@ -51,7 +52,11 @@ struct COMMONGAMEFRAMEWORK_API FItemInstance
 - `InstanceFragments` are owned, instanced UObjects: the one place UObjects carry per-item data
 
 **Serialization:**
-- Network: custom `NetSerialize` (`TStructOpsTypeTraits`: `WithNetSerializer`, `WithIdenticalViaEquality`)
+- Network: custom `NetSerialize` (`TStructOpsTypeTraits`: `WithNetSerializer`, `WithIdentical`)
+- Two comparisons: `operator==` is identity (the same `InstanceId`), what game code finds an instance by; `Identical`
+  compares what `NetSerialize` sends (the id, the definition, `StackCount`, the fragment objects) and is what replication
+  compares a property with its last sent state through, so a count changed in place reaches the clients (G135). The
+  fragments are compared as objects, never read: a fragment's contents changed in place are not a change to it
 - Storage: ItemInventoryPlugin's `FItemSerializationUtils` writes the JSON; each fragment writes its own data through
   `SerializeFragment`
 

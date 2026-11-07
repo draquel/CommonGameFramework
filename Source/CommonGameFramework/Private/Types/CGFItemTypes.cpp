@@ -47,6 +47,16 @@ bool FItemInstance::operator!=(const FItemInstance& Other) const
 	return !(*this == Other);
 }
 
+bool FItemInstance::Identical(const FItemInstance* Other, uint32 PortFlags) const
+{
+	// TObjectPtr's equality compares the handles: a fragment the shadow state still points at after GC is never read.
+	return Other
+		&& InstanceId == Other->InstanceId
+		&& ItemDefinitionId == Other->ItemDefinitionId
+		&& StackCount == Other->StackCount
+		&& InstanceFragments == Other->InstanceFragments;
+}
+
 bool FItemInstance::NetSerialize(FArchive& Ar, UPackageMap* Map, bool& bOutSuccess)
 {
 	Ar << InstanceId;

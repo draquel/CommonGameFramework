@@ -215,8 +215,9 @@ test-only actors (a player pawn with a bag, an equipment manager and an interact
 a held option). Nothing is delivered by hand. It checks that a chest's items at its first replication reach the client;
 that an add on the server reaches the client's bag through the fast array and fires its callback there; an equip the
 client asks for (the RPC, the server's checks, the slot replicated and `OnRep_EquipmentSlots` on the client); a move the
-client asks for, and one into the chest refused with `NotAuthorized` (G96) with nothing changed on either machine; and a
-held interaction the server completes after the option's hold, whose `ClientRPC_InteractionResult` ends the client's
+client asks for, and one into the chest refused with `NotAuthorized` (G96) with nothing changed on either machine; a
+stack's count changed in place on the server (a partial removal, then an add onto the stack) reaching the client's bag,
+which only `FItemInstance::Identical` sees, the slot's item keeping its id (G135); and a held interaction the server completes after the option's hold, whose `ClientRPC_InteractionResult` ends the client's
 channel. It needs the editor, so the in-editor gate runs it (`Scripts/qa/editor_gate.py`) and the headless suite does
 not (the test skips itself under `-nullrhi` and in a commandlet). The RPC bodies' cases are tested by simulation:
 `CGFTesting::FRPCCall` delivers a client's request to the server's component in one standalone world
@@ -419,7 +420,7 @@ and the backends' details are in `Plugins/ItemInventoryPlugin/Documentation/ITEM
 
 | Risk | Impact | Where it stands |
 |------|--------|-----------------|
-| `FFastArraySerializer` replication bugs | items disappear or duplicate on clients | `VoxelEngine.Replication.Framework` (§3.1) checks an add, a move and a chest's first replication over the real net driver, in the in-editor gate |
+| `FFastArraySerializer` replication bugs | items disappear or duplicate on clients | `VoxelEngine.Replication.Framework` (§3.1) checks an add, a move, a stack's count changed in place (G135) and a chest's first replication over the real net driver, in the in-editor gate |
 | Instance fragment UObject GC pressure | frame cost with large inventories | not profiled; `FInstancedStruct` is the fallback (loses Blueprint subclassing) |
 | Cross-inventory atomicity | duplication or loss | validation before mutation; merge and cross-inventory move have tests (`ItemInventory.Operations.*`) |
 | Loot table cycles | unbounded recursion | `ULootGenerationSubsystem::MaxRecursionDepth` 5 with a warning; no edit-time cycle check |
