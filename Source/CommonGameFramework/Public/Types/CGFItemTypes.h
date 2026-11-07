@@ -58,32 +58,68 @@ struct COMMONGAMEFRAMEWORK_API FItemInstance
 	bool operator!=(const FItemInstance& Other) const;
 
 	/**
-	 * The reflection system's comparison (the WithIdentical trait): every field NetSerialize sends. Replication compares a
-	 * property with the state it last sent through this, so a count changed in place (a partial removal, a stack added
-	 * onto, a split) is a change and reaches the clients; with identity alone it never did (G135). The fragments are
-	 * compared as objects and never dereferenced: replication's copy of the last sent state shares the live item's
-	 * fragment objects without keeping them alive, so a fragment's contents changed in place are not seen here.
+	 * The reflection system's comparison (the WithIdentical trait): every field NetSerialize sends, and the fragment
+	 * revision. Replication compares a property with the state it last sent through this, so a count changed in place (a
+	 * partial removal, a stack added onto, a split) is a change and reaches the clients; with identity alone it never did
+	 * (G135). The fragments are compared as objects and never dereferenced: replication's copy of the last sent state
+	 * shares the live item's fragment objects without keeping them alive, so their contents look the same on both sides.
+	 * A change to them shows as the revision EditFragment bumps, which that copy holds by value (G136).
 	 * @param Other The item to compare with; null is no match.
 	 * @param PortFlags The caller's port flags; the comparison is the same for every flag.
-	 * @return True when the id, the definition, the count and the fragment objects are all the same.
+	 * @return True when the id, the definition, the count, the fragment objects and the fragment revision are all the same.
 	 */
 	bool Identical(const FItemInstance* Other, uint32 PortFlags) const;
 
 	bool NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& bOutSuccess);
 
-	/** Find a fragment by class */
+	/**
+	 * Find a fragment by class, to read it. A change goes through EditFragment.
+	 * @return The first instance fragment of class T, or null.
+	 */
 	template<typename T>
-	T* FindFragment() const
+	const T* FindFragment() const
 	{
-		for (UItemInstanceFragment* Fragment : InstanceFragments)
+		for (const UItemInstanceFragment* Fragment : InstanceFragments)
 		{
-			if (T* Typed = Cast<T>(Fragment))
+			if (const T* Typed = Cast<T>(Fragment))
 			{
 				return Typed;
 			}
 		}
 		return nullptr;
 	}
+
+	/**
+	 * Find a fragment by class to change its contents in place, and mark the item changed for replication: the fragment
+	 * revision rises, so Identical no longer matches the state last sent and the item is sent again (G136). Call it on
+	 * the item where it is held (an inventory slot's own item, an equipment slot's), each time a fragment changes, and do
+	 * not keep the pointer past the change. A copy of an item shares its fragment objects with the original: a change
+	 * through a copy lands on both and marks only the copy, so write the copy back (UInventoryComponent::TryReplaceItem
+	 * with its own id) or the change never replicates. A held item in a fast array also needs its slot marked dirty,
+	 * which the owning component's operations do.
+	 * @return The first instance fragment of class T, or null (nothing is marked then).
+	 */
+	template<typename T>
+	T* EditFragment()
+	{
+		for (UItemInstanceFragment* Fragment : InstanceFragments)
+		{
+			if (T* Typed = Cast<T>(Fragment))
+			{
+				++FragmentRevision;
+				return Typed;
+			}
+		}
+		return nullptr;
+	}
+
+private:
+	/**
+	 * How many times a fragment was changed through EditFragment (wrapping). Not a property, not sent and not saved: the
+	 * value only has to differ from the one in replication's copy of the last sent state, into which it is copied by
+	 * value with the rest of the item. A client's copy gets new fragment objects at every receive, so it needs none.
+	 */
+	uint32 FragmentRevision = 0;
 };
 
 template<>

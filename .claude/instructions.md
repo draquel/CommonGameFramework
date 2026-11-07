@@ -62,7 +62,9 @@ CommonGameFramework/
 5. **Changes here affect every plugin.** Add a type only when it is shared.
 6. **`FItemInstance` rules:** GUIDs are made on the server only (`UItemDatabaseSubsystem::CreateItemInstance`);
    `InstanceId` is the key for every operation, never an array index; `StackCount` is at least 1 for a valid instance;
-   instance fragments are the one place UObjects carry per-item data.
+   instance fragments are the one place UObjects carry per-item data. A fragment changes through `EditFragment` on
+   the item where it is held, which bumps the fragment revision `Identical` compares; `FindFragment` is for reading
+   (it returns a const fragment). A copy of an item shares its fragment objects (G136, `COMMON_TYPES.md`).
 7. **Definition fragments vs instance fragments:** the definition fragment base (`UItemDefinitionFragment`) lives in
    ItemInventoryPlugin, which owns item data assets; the instance fragment base (`UItemInstanceFragment`) lives here
    because every plugin carries `FItemInstance`.
