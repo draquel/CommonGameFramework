@@ -52,8 +52,22 @@ struct COMMONGAMEFRAMEWORK_API FItemInstance
 	TArray<TObjectPtr<UItemInstanceFragment>> InstanceFragments;
 
 	bool IsValid() const;
+
+	/** Identity: the same instance (the same InstanceId), whatever its count or fragments. Game code finds an instance with it. */
 	bool operator==(const FItemInstance& Other) const;
 	bool operator!=(const FItemInstance& Other) const;
+
+	/**
+	 * The reflection system's comparison (the WithIdentical trait): every field NetSerialize sends. Replication compares a
+	 * property with the state it last sent through this, so a count changed in place (a partial removal, a stack added
+	 * onto, a split) is a change and reaches the clients; with identity alone it never did (G135). The fragments are
+	 * compared as objects and never dereferenced: replication's copy of the last sent state shares the live item's
+	 * fragment objects without keeping them alive, so a fragment's contents changed in place are not seen here.
+	 * @param Other The item to compare with; null is no match.
+	 * @param PortFlags The caller's port flags; the comparison is the same for every flag.
+	 * @return True when the id, the definition, the count and the fragment objects are all the same.
+	 */
+	bool Identical(const FItemInstance* Other, uint32 PortFlags) const;
 
 	bool NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& bOutSuccess);
 
@@ -78,7 +92,7 @@ struct TStructOpsTypeTraits<FItemInstance> : public TStructOpsTypeTraitsBase2<FI
 	enum
 	{
 		WithNetSerializer = true,
-		WithIdenticalViaEquality = true,
+		WithIdentical = true, // not WithIdenticalViaEquality: operator== is identity, which hides a count change (G135)
 	};
 };
 
