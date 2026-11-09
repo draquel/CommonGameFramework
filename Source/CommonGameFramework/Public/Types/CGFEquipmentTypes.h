@@ -34,7 +34,7 @@ struct COMMONGAMEFRAMEWORK_API FEquipmentSlotDefinition
 	FTransform AttachOffset = FTransform::Identity;
 
 	/**
-	 * Set on a sheath (the equipment sheathing plan, D76): the hand slot its item is drawn into (Equipment.Slot.MainHand).
+	 * Set on a sheath (the equipment sheathing plan, D77): the hand slot its item is drawn into (Equipment.Slot.MainHand).
 	 * A sheath's item hangs at AttachSocket until drawn, then rides the hand with its hand fit; it grants its abilities and
 	 * effects only while drawn. Empty = an ordinary slot.
 	 */

@@ -234,7 +234,7 @@ struct COMMONGAMEFRAMEWORK_API FEquipmentSlotDefinition
 };
 ```
 
-A slot with a `DrawSlotTag` is a sheath (the equipment sheathing plan, D76): its item hangs at `AttachSocket` until it is
+A slot with a `DrawSlotTag` is a sheath (the equipment sheathing plan, D77): its item hangs at `AttachSocket` until it is
 drawn into that hand, and its abilities and effects apply only while drawn (`EQUIPMENT_SYSTEM.md`, "Sheaths").
 
 ### FLootContext and FLootResult
