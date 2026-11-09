@@ -37,6 +37,10 @@ namespace CGFGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Equipment_Slot_OffHand,    "Equipment.Slot.OffHand",    "Off hand weapon/shield slot");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Equipment_Slot_Accessory1, "Equipment.Slot.Accessory1", "First accessory slot");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Equipment_Slot_Accessory2, "Equipment.Slot.Accessory2", "Second accessory slot");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Equipment_Slot_Sheath,         "Equipment.Slot.Sheath",         "A carried weapon's place on the body, drawn into a hand");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Equipment_Slot_Sheath_HipLeft, "Equipment.Slot.Sheath.HipLeft", "Sheath at the left hip (a one-handed sword)");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Equipment_Slot_Sheath_Back,    "Equipment.Slot.Sheath.Back",    "Sheath across the back (a bow, a two-hander)");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Equipment_Slot_Sheath_Belt,    "Equipment.Slot.Sheath.Belt",    "Hung from the belt at the right hip (a tool)");
 
 	// Interaction.Type
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Interaction_Type_Pickup,  "Interaction.Type.Pickup",  "Pick up an item");

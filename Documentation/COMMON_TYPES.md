@@ -228,8 +228,14 @@ struct COMMONGAMEFRAMEWORK_API FEquipmentSlotDefinition
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     FTransform AttachOffset = FTransform::Identity;  // The slot's skeleton correction for the visual
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FGameplayTag DrawSlotTag;                    // Set on a sheath: the hand its item is drawn into (MainHand)
 };
 ```
+
+A slot with a `DrawSlotTag` is a sheath (the equipment sheathing plan, D77): its item hangs at `AttachSocket` until it is
+drawn into that hand, and its abilities and effects apply only while drawn (`EQUIPMENT_SYSTEM.md`, "Sheaths").
 
 ### FLootContext and FLootResult
 
@@ -491,8 +497,12 @@ Equipment.Slot.MainHand
 Equipment.Slot.OffHand
 Equipment.Slot.Accessory1
 Equipment.Slot.Accessory2
+Equipment.Slot.Sheath.HipLeft     — a carried one-handed sword
+Equipment.Slot.Sheath.Back        — a carried bow or two-hander
+Equipment.Slot.Sheath.Belt        — a carried tool, at the right hip
 
-An equipment fragment naming the parent Equipment.Slot.Accessory goes to the first empty child slot.
+An equipment fragment naming the parent Equipment.Slot.Accessory goes to the first empty child slot; a sheath tag works
+the same way (an item's SheathSlotTag may name Equipment.Slot.Sheath).
 ```
 
 ### Interaction Tags
