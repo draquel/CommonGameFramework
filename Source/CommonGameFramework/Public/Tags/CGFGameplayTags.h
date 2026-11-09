@@ -40,6 +40,13 @@ namespace CGFGameplayTags
 	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Equipment_Slot_Accessory1);
 	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Equipment_Slot_Accessory2);
 
+	// Equipment.Slot.Sheath: where a carried weapon hangs on the body until it is drawn into a hand (the equipment
+	// sheathing plan, D76/D77; FEquipmentSlotDefinition::DrawSlotTag names the hand)
+	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Equipment_Slot_Sheath);
+	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Equipment_Slot_Sheath_HipLeft);
+	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Equipment_Slot_Sheath_Back);
+	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Equipment_Slot_Sheath_Belt);
+
 	// Interaction.Type
 	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Interaction_Type_Pickup);
 	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Interaction_Type_Drop);
