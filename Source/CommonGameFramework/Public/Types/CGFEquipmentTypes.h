@@ -34,18 +34,11 @@ struct COMMONGAMEFRAMEWORK_API FEquipmentSlotDefinition
 	FTransform AttachOffset = FTransform::Identity;
 
 	/**
-	 * Set on a sheath (the equipment sheathing plan, D77): the hand slot its item is drawn into (Equipment.Slot.MainHand).
-	 * A sheath's item hangs at AttachSocket until drawn, then rides the hand with its hand fit; it grants its abilities and
-	 * effects only while drawn. Empty = an ordinary slot.
+	 * Set on a sheath (the equipment sheathing plan, D77): the hand slot its item is drawn into (Equipment.Slot.MainHand),
+	 * unless the item names another hand of the owner as its EquipmentSlotTag (a shield on the back draws into the off
+	 * hand, D95). A sheath's item hangs at AttachSocket until drawn, then rides the hand with its hand fit; it grants its
+	 * abilities and effects only while drawn. A sheath holds one item: it is one place on the body. Empty = an ordinary slot.
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (Categories = "Equipment.Slot"))
 	FGameplayTag DrawSlotTag;
-
-	/**
-	 * A sheath whose item is in its hand whenever it can be (a shield on the back, drawn onto the off hand): drawn on its
-	 * own as soon as the hand is free and nothing held blocks it (UItemFragment_Equipment::BlockedSlotTags), sheathed while
-	 * something does. The equipment manager keeps it so; nothing asks for it. Only on a sheath (DrawSlotTag set).
-	 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	bool bDrawWhenFree = false;
 };

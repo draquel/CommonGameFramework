@@ -41,6 +41,6 @@ enum class EEquipmentResult : uint8
 	SlotOccupied,
 	NoInventorySpace,
 	NotAuthorized,
-	/** The hand is blocked by an item held in another hand (a shield's off hand beside a bow or a two-hander). */
+	/** The hand is blocked by an item held in another hand (the off hand beside a pickaxe or a bow: no shield, no torch). */
 	HandBlocked
 };
