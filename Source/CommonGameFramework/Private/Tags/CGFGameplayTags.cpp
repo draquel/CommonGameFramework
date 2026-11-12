@@ -41,6 +41,7 @@ namespace CGFGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Equipment_Slot_Sheath_HipLeft, "Equipment.Slot.Sheath.HipLeft", "Sheath at the left hip (a one-handed sword)");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Equipment_Slot_Sheath_Back,    "Equipment.Slot.Sheath.Back",    "Sheath across the back (a bow, a two-hander)");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Equipment_Slot_Sheath_Belt,    "Equipment.Slot.Sheath.Belt",    "Hung from the belt at the right hip (a tool)");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Equipment_Slot_Sheath_ShieldBack, "Equipment.Slot.Sheath.ShieldBack", "A shield slung on the back while the off hand is blocked (a bow, a two-hander)");
 
 	// Interaction.Type
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Interaction_Type_Pickup,  "Interaction.Type.Pickup",  "Pick up an item");
@@ -75,11 +76,14 @@ namespace CGFGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Damage_Type_Poison,   "Damage.Type.Poison",   "Poison damage");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Damage_Type_Pure,     "Damage.Type.Pure",     "Unmitigated damage (ignores defense)");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Damage_Critical,      "Damage.Critical",      "Context tag on a hit that rolled a critical");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Damage_Blocked,       "Damage.Blocked",       "Context tag on a hit a guard took (reduced by the shield)");
 
 	// State
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Dead,         "State.Dead",         "Combatant has died; rejects damage and ability activation");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Downed,       "State.Downed",       "Knocked out but recoverable; rejects ability activation");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Invulnerable, "State.Invulnerable", "Takes no damage while held");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Blocking,     "State.Blocking",     "Guarding: hits from the front within the shield's arc lose part of their damage");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_GuardBroken,  "State.GuardBroken",  "The guard broke (no stamina left for a blocked hit); no block until it lifts");
 
 	// Event.Combat
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Event_Combat_Damaged, "Event.Combat.Damaged", "Sent to the target ASC after damage is applied");

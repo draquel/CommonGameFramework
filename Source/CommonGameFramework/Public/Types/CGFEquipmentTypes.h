@@ -40,4 +40,12 @@ struct COMMONGAMEFRAMEWORK_API FEquipmentSlotDefinition
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (Categories = "Equipment.Slot"))
 	FGameplayTag DrawSlotTag;
+
+	/**
+	 * A sheath whose item is in its hand whenever it can be (a shield on the back, drawn onto the off hand): drawn on its
+	 * own as soon as the hand is free and nothing held blocks it (UItemFragment_Equipment::BlockedSlotTags), sheathed while
+	 * something does. The equipment manager keeps it so; nothing asks for it. Only on a sheath (DrawSlotTag set).
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	bool bDrawWhenFree = false;
 };
