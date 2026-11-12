@@ -46,7 +46,9 @@ namespace CGFGameplayTags
 	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Equipment_Slot_Sheath_HipLeft);
 	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Equipment_Slot_Sheath_Back);
 	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Equipment_Slot_Sheath_Belt);
-	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Equipment_Slot_Sheath_ShieldBack);
+
+	// Equipment.Slot.Quiver: where a quiver is worn, reserved for the bow's quiver (the sheath loadout plan, D97)
+	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Equipment_Slot_Quiver);
 
 	// Interaction.Type
 	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Interaction_Type_Pickup);

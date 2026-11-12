@@ -39,9 +39,9 @@ namespace CGFGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Equipment_Slot_Accessory2, "Equipment.Slot.Accessory2", "Second accessory slot");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Equipment_Slot_Sheath,         "Equipment.Slot.Sheath",         "A carried weapon's place on the body, drawn into a hand");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Equipment_Slot_Sheath_HipLeft, "Equipment.Slot.Sheath.HipLeft", "Sheath at the left hip (a one-handed sword)");
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Equipment_Slot_Sheath_Back,    "Equipment.Slot.Sheath.Back",    "Sheath across the back (a bow, a two-hander)");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Equipment_Slot_Sheath_Back,    "Equipment.Slot.Sheath.Back",    "Sheath across the back: one of a bow, a two-hander or a shield (D95)");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Equipment_Slot_Sheath_Belt,    "Equipment.Slot.Sheath.Belt",    "Hung from the belt at the right hip (a tool)");
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Equipment_Slot_Sheath_ShieldBack, "Equipment.Slot.Sheath.ShieldBack", "A shield slung on the back while the off hand is blocked (a bow, a two-hander)");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Equipment_Slot_Quiver,         "Equipment.Slot.Quiver",         "Where a quiver is worn (reserved for the bow's quiver, D97)");
 
 	// Interaction.Type
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Interaction_Type_Pickup,  "Interaction.Type.Pickup",  "Pick up an item");

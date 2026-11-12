@@ -231,16 +231,14 @@ struct COMMONGAMEFRAMEWORK_API FEquipmentSlotDefinition
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     FGameplayTag DrawSlotTag;                    // Set on a sheath: the hand its item is drawn into (MainHand)
-
-    UPROPERTY(EditAnywhere, BlueprintReadOnly)
-    bool bDrawWhenFree = false;                  // A sheath whose item is in its hand whenever it can be (a shield)
 };
 ```
 
 A slot with a `DrawSlotTag` is a sheath (the equipment sheathing plan, D77): its item hangs at `AttachSocket` until it is
-drawn into that hand, and its abilities and effects apply only while drawn (`EQUIPMENT_SYSTEM.md`, "Sheaths"). With
-`bDrawWhenFree` the equipment manager draws its item whenever the hand is free and not blocked, and sheathes it while
-an item in another hand blocks that hand (G175: the shield onto the back while a bow is out).
+drawn into that hand, and its abilities and effects apply only while drawn (`EQUIPMENT_SYSTEM.md`, "Sheaths"). An item
+whose `EquipmentSlotTag` names another hand of the owner is drawn into that one instead (a shield on the back, into the
+off hand). A sheath is one place on the body and holds one item (the sheath loadout plan, D95): the back holds one of a
+bow, a two-hander or a shield.
 
 ### FLootContext and FLootResult
 
@@ -343,7 +341,7 @@ Success, Failed, NotAllowed, OutOfRange, Cancelled, InProgress
 ```
 Success, Failed, InvalidItem, IncompatibleSlot, SlotOccupied,
 NoInventorySpace (for unequip-to-inventory), NotAuthorized,
-HandBlocked (an item in another hand blocks the slot: a shield's or a torch's off hand beside a bow, G175)
+HandBlocked (an item in another hand blocks the slot: the off hand beside a pickaxe or a bow, no shield or torch, G175)
 ```
 
 ### ECGFDamageResult
@@ -504,9 +502,9 @@ Equipment.Slot.OffHand
 Equipment.Slot.Accessory1
 Equipment.Slot.Accessory2
 Equipment.Slot.Sheath.HipLeft     — a carried one-handed sword
-Equipment.Slot.Sheath.Back        — a carried bow or two-hander
+Equipment.Slot.Sheath.Back        — one of a carried bow, two-hander or shield (D95)
 Equipment.Slot.Sheath.Belt        — a carried tool, at the right hip
-Equipment.Slot.Sheath.ShieldBack  — a shield on the back while the off hand is blocked (drawn into OffHand)
+Equipment.Slot.Quiver             — where a quiver is worn (reserved, D97)
 
 An equipment fragment naming the parent Equipment.Slot.Accessory goes to the first empty child slot; a sheath tag works
 the same way (an item's SheathSlotTag may name Equipment.Slot.Sheath).
