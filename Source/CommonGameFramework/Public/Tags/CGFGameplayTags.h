@@ -12,6 +12,10 @@ namespace CGFGameplayTags
 	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Item_Category_Quest);
 	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Item_Category_Misc);
 	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Item_Category_Light);
+	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Item_Category_Quiver);
+
+	// Item.Type: what an item is, for a rule that names a kind (a quiver shares the back with a bow only, D97)
+	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Item_Type_Bow);
 
 	// Item.Rarity
 	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Item_Rarity_Common);
@@ -47,7 +51,7 @@ namespace CGFGameplayTags
 	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Equipment_Slot_Sheath_Back);
 	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Equipment_Slot_Sheath_Belt);
 
-	// Equipment.Slot.Quiver: where a quiver is worn, reserved for the bow's quiver (the sheath loadout plan, D97)
+	// Equipment.Slot.Quiver: where a quiver is worn (on the back, beside a bow: the sheath loadout plan's D97)
 	COMMONGAMEFRAMEWORK_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Equipment_Slot_Quiver);
 
 	// Interaction.Type

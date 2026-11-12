@@ -10,6 +10,10 @@ namespace CGFGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Item_Category_Quest,      "Item.Category.Quest",      "Quest items (often non-droppable)");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Item_Category_Misc,       "Item.Category.Misc",       "Everything else");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Item_Category_Light,      "Item.Category.Light",      "Carried light sources (torches, lanterns)");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Item_Category_Quiver,     "Item.Category.Quiver",     "Quivers, worn beside a bow");
+
+	// Item.Type
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Item_Type_Bow, "Item.Type.Bow", "A bow (a quiver shares the back with it, D97)");
 
 	// Item.Rarity
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Item_Rarity_Common,    "Item.Rarity.Common",    "Common rarity");
@@ -41,7 +45,7 @@ namespace CGFGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Equipment_Slot_Sheath_HipLeft, "Equipment.Slot.Sheath.HipLeft", "Sheath at the left hip (a one-handed sword)");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Equipment_Slot_Sheath_Back,    "Equipment.Slot.Sheath.Back",    "Sheath across the back: one of a bow, a two-hander or a shield (D95)");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Equipment_Slot_Sheath_Belt,    "Equipment.Slot.Sheath.Belt",    "Hung from the belt at the right hip (a tool)");
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Equipment_Slot_Quiver,         "Equipment.Slot.Quiver",         "Where a quiver is worn (reserved for the bow's quiver, D97)");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Equipment_Slot_Quiver,         "Equipment.Slot.Quiver",         "Where a quiver is worn: on the back, beside a bow (D97)");
 
 	// Interaction.Type
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Interaction_Type_Pickup,  "Interaction.Type.Pickup",  "Pick up an item");

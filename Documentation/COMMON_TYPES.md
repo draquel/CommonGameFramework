@@ -479,6 +479,9 @@ Item.Category.Material        — Crafting materials, resources
 Item.Category.Quest           — Quest items
 Item.Category.Misc            — Everything else
 Item.Category.Light           — Carried light sources (torches)
+Item.Category.Quiver          — Quivers, worn beside a bow (D97)
+
+Item.Type.Bow                 — A bow: the item a quiver can share the back with (D97)
 
 Item.Rarity.Common / Uncommon / Rare / Epic / Legendary
 
@@ -504,7 +507,7 @@ Equipment.Slot.Accessory2
 Equipment.Slot.Sheath.HipLeft     — a carried one-handed sword
 Equipment.Slot.Sheath.Back        — one of a carried bow, two-hander or shield (D95)
 Equipment.Slot.Sheath.Belt        — a carried tool, at the right hip
-Equipment.Slot.Quiver             — where a quiver is worn (reserved, D97)
+Equipment.Slot.Quiver             — where a quiver is worn: on the back, beside a bow only (D97)
 
 An equipment fragment naming the parent Equipment.Slot.Accessory goes to the first empty child slot; a sheath tag works
 the same way (an item's SheathSlotTag may name Equipment.Slot.Sheath).
