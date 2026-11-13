@@ -29,7 +29,8 @@ CommonGameFramework/
 │   │   │   ├── CGFInteractionSourceInterface.h  ← ICGFInteractionSourceInterface (implemented by nothing today)
 │   │   │   ├── CGFDamageableInterface.h         ← ICGFDamageableInterface: faction, dead, per-hit veto
 │   │   │   ├── CGFLightBearerInterface.h        ← ICGFLightBearerInterface: carried light level, fuel spend
-│   │   │   └── CGFRestPointInterface.h          ← ICGFRestPointInterface: rest / sleep / crafting station
+│   │   │   ├── CGFRestPointInterface.h          ← ICGFRestPointInterface: rest / sleep / crafting station
+│   │   │   └── CGFWaterSurfaceInterface.h       ← ICGFWaterSurfaceInterface: the world's water over a position
 │   │   ├── Types/
 │   │   │   ├── CGFItemTypes.h                   ← UItemInstanceFragment, FItemInstance, FInventorySlot,
 │   │   │   │                                       FInventorySlotArray; inventory, equipment, storage delegates
@@ -37,15 +38,18 @@ CommonGameFramework/
 │   │   │   ├── CGFEquipmentTypes.h              ← FEquipmentSlotDefinition
 │   │   │   ├── CGFLootTypes.h                   ← FLootContext, FLootResult
 │   │   │   ├── CGFCombatTypes.h                 ← FCGFDamageContext, ECGFDamageResult, FCGFAttributeModifier
+│   │   │   ├── CGFWaterTypes.h                  ← FCGFWaterSurfaceSample
 │   │   │   └── CGFCommonEnums.h                 ← EInventoryOperationResult, EInteractionResult, EEquipmentResult
 │   │   ├── Tags/CGFGameplayTags.h               ← native tag declarations (namespace CGFGameplayTags)
 │   │   ├── Utilities/
 │   │   │   ├── CGFStatics.h                     ← item / tag / GUID helpers
 │   │   │   ├── CGFCombatStatics.h               ← FindDamageable, the hostility rule
 │   │   │   └── CGFGameplayEffectStatics.h       ← apply FCGFAttributeModifier lists (instant / SetByCaller.Stat.*)
+│   │   ├── Subsystems/CGFWaterSubsystem.h       ← UCGFWaterSubsystem: where the game layer registers its water
 │   │   ├── Testing/CGFTestGameInstance.h        ← CGFTesting::FTestGameInstance, FRPCCall (automation tests only)
+│   │   ├── Testing/CGFTestWaterSurface.h        ← UCGFTestWaterSurface: a plane or a sphere of water for tests
 │   │   └── CommonGameFramework.h                ← module header, log category LogCGF
-│   └── Private/ (Tags, Types, Utilities, CommonGameFramework.cpp)
+│   └── Private/ (Subsystems, Tags, Testing, Types, Utilities, CommonGameFramework.cpp)
 └── CommonGameFramework.uplugin                  ← requires GameplayAbilities
 ```
 
@@ -60,6 +64,11 @@ CommonGameFramework/
    `DeserializeFragment` on instance fragments).
 4. **Interface functions are `BlueprintNativeEvent`**, called through `Execute_*`.
 5. **Changes here affect every plugin.** Add a type only when it is shared.
+6. **What the world is comes in through a provider.** The framework knows no world plugin. Where a framework actor
+   needs a fact about the world (the water over a position), the contract is an interface here
+   (`ICGFWaterSurfaceInterface`), the game layer registers its implementation with a subsystem here
+   (`UCGFWaterSubsystem`), and the framework asks the subsystem. The subsystem holds the registration and forwards the
+   question; it keeps no answer.
 6. **`FItemInstance` rules:** GUIDs are made on the server only (`UItemDatabaseSubsystem::CreateItemInstance`);
    `InstanceId` is the key for every operation, never an array index; `StackCount` is at least 1 for a valid instance;
    instance fragments are the one place UObjects carry per-item data. A fragment changes through `EditFragment` on
