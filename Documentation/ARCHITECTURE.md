@@ -313,6 +313,7 @@ the item if the inventory add fails after validation: no item is dropped (G90).
 | `ICGFDamageableInterface` | VoxelCharacterPlugin's `UVCCombatComponent`, VoxelWorldPOI's breakable containers (`APOIDungeonContainer`) | `UCGFCombatStatics::FindDamageable` and the combat code |
 | `ICGFLightBearerInterface` | the player character (`AVCCharacterBase`) | dungeon torches (VoxelWorldPOI), NPC AI (keeps away from a lit bearer) |
 | `ICGFRestPointInterface` | VoxelWorldPOI's campsites | the character's campsite and crafting UI |
+| `ICGFWaterSurfaceInterface` | VoxelCharacterPlugin's `UVCWaterSurfaceBridge` (the voxel world's water levels), registered with `UCGFWaterSubsystem`; `UCGFTestWaterSurface` in tests | `AWorldItem::SnapToGround` (a dropped item rests at the water's surface), through `UCGFWaterSubsystem::SampleWaterSurface` |
 | `ICGFInteractableInterface`, `ICGFInteractionSourceInterface`, `ICGFEquippableInterface` | nothing in the project | nothing: the interaction flow finds `UInteractableComponent` with `FindComponentByClass`, equipment reads `UItemFragment_Equipment` |
 
 ### 4.2 Gameplay Tags

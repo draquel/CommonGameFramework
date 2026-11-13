@@ -463,6 +463,44 @@ virtual FSimpleMulticastDelegate* GetSleepAvailabilityChangedEvent();   // C++ o
 Implemented by VoxelWorldPOI's campsites. The character's campsite UI calls it through server RPCs; the rest point
 decides what resting means. `Crafting.Station.Campfire` is the first station; recipes with no station craft by hand.
 
+### ICGFWaterSurfaceInterface, FCGFWaterSurfaceSample and UCGFWaterSubsystem
+
+```cpp
+// Interfaces/CGFWaterSurfaceInterface.h: implemented by what knows the world's water
+bool SampleWaterSurface(const FVector& Location, float ReachAbove, FCGFWaterSurfaceSample& OutSample) const;
+
+// Types/CGFWaterTypes.h
+struct FCGFWaterSurfaceSample
+{
+    bool bWater;            // water is there: the position is in it, or its surface lies within ReachAbove below it
+    double Depth;           // the position's depth under the surface: positive in the water, negative above it
+    FVector SurfacePoint;   // the point of the surface straight over (or under) the position, along Up
+    FVector Up;             // the surface's up: world +Z on a flat world, the direction from the centre on a planet
+};
+
+// Subsystems/CGFWaterSubsystem.h: a world subsystem
+void SetProvider(const TScriptInterface<ICGFWaterSurfaceInterface>& Provider);   // the game layer, once
+void ClearProvider(const UObject* Provider);                                     // only if it is the registered one
+bool HasProvider() const;
+bool SampleWaterSurface(const FVector& Location, float ReachAbove, FCGFWaterSurfaceSample& OutSample) const;
+void NotifyWaterChanged(const FBox& Bounds);                                     // the water's owner; invalid box = everywhere
+FCGFOnWaterChanged OnWaterChanged;                                               // (const FBox& Bounds), BlueprintAssignable
+```
+
+The framework plugins know no world plugin, so a framework actor that rests at a water surface asks the subsystem, and
+the game layer registers the answer: VoxelCharacterPlugin's `UVCWaterSurfaceBridge` (a world subsystem) answers from the
+voxel world's water levels (`FVoxelWaterLevels::Sample` and the voxel's water flag: not rock, not a dry cave below the
+level). `SampleWaterSurface` returns false when there is no provider or the provider knows no surface over the place;
+`bWater` then says whether water is really there. The first caller is InteractionPlugin's `AWorldItem::SnapToGround`.
+
+A sample is taken per position and never kept as the world's level: a world may have several bodies of water, and a
+body's level may change. `OnWaterChanged` fires on `SetProvider`, `ClearProvider` and `NotifyWaterChanged`, on the
+machine that called them; the item pool settles its items in the bounds again. Nothing polls. The same position gets
+the same answer on every machine: water comes from the world, not from replication.
+
+`UCGFTestWaterSurface` (`Testing/CGFTestWaterSurface.h`) is a provider for tests: a plane at a height or a sphere about
+a centre, with boxes that hold no water.
+
 ---
 
 ## Gameplay Tags
