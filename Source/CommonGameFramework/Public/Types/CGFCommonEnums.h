@@ -40,5 +40,7 @@ enum class EEquipmentResult : uint8
 	IncompatibleSlot,
 	SlotOccupied,
 	NoInventorySpace,
-	NotAuthorized
+	NotAuthorized,
+	/** The hand is blocked by an item held in another hand (the off hand beside a pickaxe or a bow: no shield, no torch). */
+	HandBlocked
 };

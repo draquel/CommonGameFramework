@@ -10,6 +10,10 @@ namespace CGFGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Item_Category_Quest,      "Item.Category.Quest",      "Quest items (often non-droppable)");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Item_Category_Misc,       "Item.Category.Misc",       "Everything else");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Item_Category_Light,      "Item.Category.Light",      "Carried light sources (torches, lanterns)");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Item_Category_Quiver,     "Item.Category.Quiver",     "Quivers, worn beside a bow");
+
+	// Item.Type
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Item_Type_Bow, "Item.Type.Bow", "A bow (a quiver shares the back with it, D97)");
 
 	// Item.Rarity
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Item_Rarity_Common,    "Item.Rarity.Common",    "Common rarity");
@@ -37,6 +41,11 @@ namespace CGFGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Equipment_Slot_OffHand,    "Equipment.Slot.OffHand",    "Off hand weapon/shield slot");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Equipment_Slot_Accessory1, "Equipment.Slot.Accessory1", "First accessory slot");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Equipment_Slot_Accessory2, "Equipment.Slot.Accessory2", "Second accessory slot");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Equipment_Slot_Sheath,         "Equipment.Slot.Sheath",         "A carried weapon's place on the body, drawn into a hand");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Equipment_Slot_Sheath_HipLeft, "Equipment.Slot.Sheath.HipLeft", "Sheath at the left hip (a one-handed sword)");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Equipment_Slot_Sheath_Back,    "Equipment.Slot.Sheath.Back",    "Sheath across the back: one of a bow, a two-hander or a shield (D95)");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Equipment_Slot_Sheath_Belt,    "Equipment.Slot.Sheath.Belt",    "Hung from the belt at the right hip (a tool)");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Equipment_Slot_Quiver,         "Equipment.Slot.Quiver",         "Where a quiver is worn: on the back, beside a bow (D97)");
 
 	// Interaction.Type
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Interaction_Type_Pickup,  "Interaction.Type.Pickup",  "Pick up an item");
@@ -71,11 +80,14 @@ namespace CGFGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Damage_Type_Poison,   "Damage.Type.Poison",   "Poison damage");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Damage_Type_Pure,     "Damage.Type.Pure",     "Unmitigated damage (ignores defense)");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Damage_Critical,      "Damage.Critical",      "Context tag on a hit that rolled a critical");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Damage_Blocked,       "Damage.Blocked",       "Context tag on a hit a guard took (reduced by the shield)");
 
 	// State
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Dead,         "State.Dead",         "Combatant has died; rejects damage and ability activation");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Downed,       "State.Downed",       "Knocked out but recoverable; rejects ability activation");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Invulnerable, "State.Invulnerable", "Takes no damage while held");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Blocking,     "State.Blocking",     "Guarding: hits from the front within the shield's arc lose part of their damage");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_GuardBroken,  "State.GuardBroken",  "The guard broke (no stamina left for a blocked hit); no block until it lifts");
 
 	// Event.Combat
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Event_Combat_Damaged, "Event.Combat.Damaged", "Sent to the target ASC after damage is applied");

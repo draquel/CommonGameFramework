@@ -37,9 +37,15 @@ struct COMMONGAMEFRAMEWORK_API FItemInstance
     bool IsValid() const;                // a GUID, a definition id and StackCount >= 1
     bool operator==(const FItemInstance& Other) const;   // equal when InstanceId matches
     bool operator!=(const FItemInstance& Other) const;
+    bool Identical(const FItemInstance* Other, uint32 PortFlags) const;  // id, definition, count, fragment objects
+                                                                         // and the fragment revision
     bool NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& bOutSuccess);
 
-    template<typename T> T* FindFragment() const;        // first instance fragment of type T
+    template<typename T> const T* FindFragment() const;  // first instance fragment of type T, to read
+    template<typename T> T* EditFragment();              // the same, to change in place: bumps the fragment revision
+
+private:
+    uint32 FragmentRevision = 0;         // a count of fragment edits; compared by Identical, never sent or saved
 };
 ```
 
@@ -51,9 +57,22 @@ struct COMMONGAMEFRAMEWORK_API FItemInstance
 - `InstanceFragments` are owned, instanced UObjects: the one place UObjects carry per-item data
 
 **Serialization:**
-- Network: custom `NetSerialize` (`TStructOpsTypeTraits`: `WithNetSerializer`, `WithIdenticalViaEquality`)
+- Network: custom `NetSerialize` (`TStructOpsTypeTraits`: `WithNetSerializer`, `WithIdentical`)
+- Two comparisons: `operator==` is identity (the same `InstanceId`), what game code finds an instance by; `Identical`
+  compares what `NetSerialize` sends (the id, the definition, `StackCount`, the fragment objects) and the fragment
+  revision, and is what replication compares a property with its last sent state through, so a count changed in place
+  reaches the clients (G135) and so do a fragment's contents changed in place (G136)
+- The fragments are compared as objects, never read: replication's copy of the last sent state shares the live item's
+  fragment objects (a copy of an item is shallow) without keeping them alive, so nothing could see their contents change.
+  The revision is a plain number in the item, copied into that state by value: `EditFragment<T>()` bumps it, and
+  `FindFragment<T>()` returns a const fragment, so a change in place goes through `EditFragment` or does not compile
+- Change a fragment on the item where it is held: an inventory slot's own item, an equipment slot's. A copy of an item
+  shares its fragment objects with the original, so a change through a copy lands on both and marks only the copy; write
+  the copy back (`UInventoryComponent::TryReplaceItem` with its own id), or the change never replicates. A held item in
+  a fast array also needs its slot marked dirty, which the owning component's operations do
 - Storage: ItemInventoryPlugin's `FItemSerializationUtils` writes the JSON; each fragment writes its own data through
-  `SerializeFragment`
+  `SerializeFragment`. The revision is neither sent nor saved: a client's copy gets new fragment objects at every
+  receive, and a loaded item starts at 0
 
 ### UItemInstanceFragment (Base Class)
 
@@ -78,6 +97,8 @@ public:
 - `EditInlineNew` + `DefaultToInstanced`, so they are edited inline on item definitions and created as instanced subobjects
 - Subclasses declare their own `UPROPERTY` fields for mutable state and implement `SerializeFragment` /
   `DeserializeFragment` for persistence and `NetSerialize` for replication
+- Those fields are `EditAnywhere` (a definition's defaults) and `BlueprintReadOnly`: a held item's fragment changes in C++
+  through `FItemInstance::EditFragment`, which a Blueprint writing the field would bypass (G136)
 - The base lives here (not in ItemInventoryPlugin) so that every plugin can carry `FItemInstance`; the subclasses
   (`UInstanceFragment_DurabilityState`, `UInstanceFragment_CustomDataMap`) live in ItemInventoryPlugin
 
@@ -207,8 +228,17 @@ struct COMMONGAMEFRAMEWORK_API FEquipmentSlotDefinition
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     FTransform AttachOffset = FTransform::Identity;  // The slot's skeleton correction for the visual
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FGameplayTag DrawSlotTag;                    // Set on a sheath: the hand its item is drawn into (MainHand)
 };
 ```
+
+A slot with a `DrawSlotTag` is a sheath (the equipment sheathing plan, D77): its item hangs at `AttachSocket` until it is
+drawn into that hand, and its abilities and effects apply only while drawn (`EQUIPMENT_SYSTEM.md`, "Sheaths"). An item
+whose `EquipmentSlotTag` names another hand of the owner is drawn into that one instead (a shield on the back, into the
+off hand). A sheath is one place on the body and holds one item (the sheath loadout plan, D95): the back holds one of a
+bow, a two-hander or a shield.
 
 ### FLootContext and FLootResult
 
@@ -310,7 +340,8 @@ Success, Failed, NotAllowed, OutOfRange, Cancelled, InProgress
 ### EEquipmentResult
 ```
 Success, Failed, InvalidItem, IncompatibleSlot, SlotOccupied,
-NoInventorySpace (for unequip-to-inventory), NotAuthorized
+NoInventorySpace (for unequip-to-inventory), NotAuthorized,
+HandBlocked (an item in another hand blocks the slot: the off hand beside a pickaxe or a bow, no shield or torch, G175)
 ```
 
 ### ECGFDamageResult
@@ -432,6 +463,44 @@ virtual FSimpleMulticastDelegate* GetSleepAvailabilityChangedEvent();   // C++ o
 Implemented by VoxelWorldPOI's campsites. The character's campsite UI calls it through server RPCs; the rest point
 decides what resting means. `Crafting.Station.Campfire` is the first station; recipes with no station craft by hand.
 
+### ICGFWaterSurfaceInterface, FCGFWaterSurfaceSample and UCGFWaterSubsystem
+
+```cpp
+// Interfaces/CGFWaterSurfaceInterface.h: implemented by what knows the world's water
+bool SampleWaterSurface(const FVector& Location, float ReachAbove, FCGFWaterSurfaceSample& OutSample) const;
+
+// Types/CGFWaterTypes.h
+struct FCGFWaterSurfaceSample
+{
+    bool bWater;            // water is there: the position is in it, or its surface lies within ReachAbove below it
+    double Depth;           // the position's depth under the surface: positive in the water, negative above it
+    FVector SurfacePoint;   // the point of the surface straight over (or under) the position, along Up
+    FVector Up;             // the surface's up: world +Z on a flat world, the direction from the centre on a planet
+};
+
+// Subsystems/CGFWaterSubsystem.h: a world subsystem
+void SetProvider(const TScriptInterface<ICGFWaterSurfaceInterface>& Provider);   // the game layer, once
+void ClearProvider(const UObject* Provider);                                     // only if it is the registered one
+bool HasProvider() const;
+bool SampleWaterSurface(const FVector& Location, float ReachAbove, FCGFWaterSurfaceSample& OutSample) const;
+void NotifyWaterChanged(const FBox& Bounds);                                     // the water's owner; invalid box = everywhere
+FCGFOnWaterChanged OnWaterChanged;                                               // (const FBox& Bounds), BlueprintAssignable
+```
+
+The framework plugins know no world plugin, so a framework actor that rests at a water surface asks the subsystem, and
+the game layer registers the answer: VoxelCharacterPlugin's `UVCWaterSurfaceBridge` (a world subsystem) answers from the
+voxel world's water levels (`FVoxelWaterLevels::Sample` and the voxel's water flag: not rock, not a dry cave below the
+level). `SampleWaterSurface` returns false when there is no provider or the provider knows no surface over the place;
+`bWater` then says whether water is really there. The first caller is InteractionPlugin's `AWorldItem::SnapToGround`.
+
+A sample is taken per position and never kept as the world's level: a world may have several bodies of water, and a
+body's level may change. `OnWaterChanged` fires on `SetProvider`, `ClearProvider` and `NotifyWaterChanged`, on the
+machine that called them; the item pool settles its items in the bounds again. Nothing polls. The same position gets
+the same answer on every machine: water comes from the world, not from replication.
+
+`UCGFTestWaterSurface` (`Testing/CGFTestWaterSurface.h`) is a provider for tests: a plane at a height or a sphere about
+a centre, with boxes that hold no water.
+
 ---
 
 ## Gameplay Tags
@@ -448,6 +517,9 @@ Item.Category.Material        — Crafting materials, resources
 Item.Category.Quest           — Quest items
 Item.Category.Misc            — Everything else
 Item.Category.Light           — Carried light sources (torches)
+Item.Category.Quiver          — Quivers, worn beside a bow (D97)
+
+Item.Type.Bow                 — A bow: the item a quiver can share the back with (D97)
 
 Item.Rarity.Common / Uncommon / Rare / Epic / Legendary
 
@@ -470,8 +542,13 @@ Equipment.Slot.MainHand
 Equipment.Slot.OffHand
 Equipment.Slot.Accessory1
 Equipment.Slot.Accessory2
+Equipment.Slot.Sheath.HipLeft     — a carried one-handed sword
+Equipment.Slot.Sheath.Back        — one of a carried bow, two-hander or shield (D95)
+Equipment.Slot.Sheath.Belt        — a carried tool, at the right hip
+Equipment.Slot.Quiver             — where a quiver is worn: on the back, beside a bow only (D97)
 
-An equipment fragment naming the parent Equipment.Slot.Accessory goes to the first empty child slot.
+An equipment fragment naming the parent Equipment.Slot.Accessory goes to the first empty child slot; a sheath tag works
+the same way (an item's SheathSlotTag may name Equipment.Slot.Sheath).
 ```
 
 ### Interaction Tags
@@ -513,10 +590,13 @@ Damage.Type.Fire
 Damage.Type.Poison
 Damage.Type.Pure              — Unmitigated
 Damage.Critical               — Context tag on a hit that rolled a critical
+Damage.Blocked                — Context tag on a hit a guard took (reduced by the shield)
 
 State.Dead                    — Rejects damage and ability activation
 State.Downed                  — Knocked out but recoverable
 State.Invulnerable            — Takes no damage while held
+State.Blocking                — Guarding: hits from the front within the shield's arc lose part of their damage
+State.GuardBroken             — The guard broke; no block until it lifts
 
 Event.Combat.Damaged          — Gameplay event sent to the target ASC after a hit
 Event.Combat.Downed
